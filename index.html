@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Groove Trainer</title>
+  <meta name="description" content="Drum practice tool: metronome, tempo and gap trainer, reggae/funk/soul/fusion groove loops and a pattern builder. Works offline.">
+  <meta name="theme-color" content="#0b0d10">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <!-- iOS home-screen app -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Groove Trainer">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== TRANSPORT (always visible) ===================== -->
+  <section class="transport" id="transport" aria-label="Transport">
+    <div class="beats" id="beatDots" aria-hidden="true"></div>
+
+    <div class="bpm-row">
+      <button class="bpm-btn" id="bpmDown" aria-label="Slower">−</button>
+      <div class="bpm-display">
+        <output id="bpmValue" aria-live="off">100</output>
+        <div class="bpm-label">BPM <span id="bpmUnit">♩</span></div>
+      </div>
+      <button class="bpm-btn" id="bpmUp" aria-label="Faster">+</button>
+    </div>
+    <input type="range" id="bpmSlider" class="slider big" min="30" max="300" step="1" value="100" aria-label="Tempo">
+
+    <div class="status" id="statusLine" aria-live="polite"></div>
+
+    <div class="swing-row">
+      <label for="swing">Swing</label>
+      <input type="range" id="swing" class="slider" min="0" max="100" step="1" value="0">
+      <span class="swing-val" id="swingVal">Straight</span>
+      <div class="seg small" id="swingRes" role="group" aria-label="Swing resolution">
+        <button data-value="8">8ths</button><button data-value="16">16ths</button>
+      </div>
+    </div>
+
+    <div class="now-playing" id="nowPlaying">Metronome</div>
+
+    <div class="play-bar">
+      <button class="tap-btn" id="tapBtn">TAP</button>
+      <button class="play-btn" id="playBtn" aria-label="Play">▶ PLAY</button>
+    </div>
+  </section>
+
+  <!-- ===================== PANELS ===================== -->
+  <div class="panels">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="metronome">Metronome</button>
+      <button role="tab" data-tab="grooves">Grooves</button>
+      <button role="tab" data-tab="builder">Builder</button>
+      <button role="tab" data-tab="trainer">Trainer</button>
+    </nav>
+
+    <!-- Metronome -->
+    <section class="panel" id="panel-metronome" role="tabpanel">
+      <div class="card">
+        <h3>Time signature</h3>
+        <div class="seg wrap" id="meterSeg"></div>
+        <p class="hint" id="meterHint"></p>
+      </div>
+      <div class="card">
+        <h3>Subdivision</h3>
+        <div class="seg wrap" id="subSeg"></div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <h3>Accent beat 1</h3>
+          <button class="toggle" id="accentToggle" aria-pressed="true">On</button>
+        </div>
+        <label class="slider-row"><span>Click volume</span>
+          <input type="range" class="slider" id="clickVol" min="0" max="100"></label>
+        <label class="slider-row"><span>Subdivision volume</span>
+          <input type="range" class="slider" id="subVol" min="0" max="100"></label>
+      </div>
+    </section>
+
+    <!-- Grooves -->
+    <section class="panel" id="panel-grooves" role="tabpanel">
+      <div class="seg wrap" id="styleFilter"></div>
+      <div class="groove-list" id="grooveList"></div>
+      <div class="card">
+        <h3>Mixer</h3>
+        <p class="hint">Mute a drum to play that part yourself.</p>
+        <div class="mixer" data-mixer></div>
+      </div>
+    </section>
+
+    <!-- Builder -->
+    <section class="panel" id="panel-builder" role="tabpanel">
+      <div class="card">
+        <div class="row">
+          <h3 class="pattern-name"><span id="patternName">New pattern</span> <span class="dirty" id="dirtyMark" title="Unsaved changes">●</span></h3>
+        </div>
+        <label class="select-row"><span>Saved</span>
+          <select id="patternSelect"></select></label>
+        <div class="btn-row">
+          <button id="pNew">New</button>
+          <button id="pSave" class="primary">Save</button>
+          <button id="pRename">Rename</button>
+          <button id="pDuplicate">Duplicate</button>
+          <button id="pDelete" class="danger">Delete</button>
+        </div>
+        <div class="btn-row">
+          <button id="pExport">Export</button>
+          <button id="pExportAll">Export all</button>
+          <button id="pImport">Import</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row wrap-row">
+          <div class="seg" id="resSeg" role="group" aria-label="Grid">
+            <button data-value="16">16ths</button><button data-value="12">Triplets</button>
+          </div>
+          <div class="seg" id="barsSeg" role="group" aria-label="Bars">
+            <button data-value="1">1 bar</button><button data-value="2">2</button><button data-value="3">3</button><button data-value="4">4</button>
+          </div>
+          <button id="pClear" class="danger">Clear</button>
+        </div>
+        <div class="grid" id="grid"></div>
+        <p class="hint legend">Tap a cell: off → <span class="lg hit"></span> hit → <span class="lg accent"></span> accent → <span class="lg ghost"></span> ghost → off. Tap a drum name to hear it.</p>
+      </div>
+      <div class="card">
+        <h3>Mixer</h3>
+        <div class="mixer" data-mixer></div>
+      </div>
+    </section>
+
+    <!-- Trainer -->
+    <section class="panel" id="panel-trainer" role="tabpanel">
+      <div class="card">
+        <div class="row">
+          <h3>Tempo trainer</h3>
+          <button class="toggle" id="trainerToggle" aria-pressed="false">Off</button>
+        </div>
+        <p class="hint">Starts at the start tempo and steps toward the target. Works with the metronome, grooves and your patterns.</p>
+        <div class="steppers">
+          <div class="stepper" data-key="trainer.start" data-min="30" data-max="300" data-label="Start BPM"></div>
+          <div class="stepper" data-key="trainer.target" data-min="30" data-max="300" data-label="Target BPM"></div>
+          <div class="stepper" data-key="trainer.step" data-min="1" data-max="50" data-label="Change by (BPM)"></div>
+          <div class="stepper" data-key="trainer.every" data-min="1" data-max="64" data-label="Every (bars)"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <h3>Gap trainer</h3>
+          <button class="toggle" id="gapToggle" aria-pressed="false">Off</button>
+        </div>
+        <p class="hint">Plays some bars, then goes silent so you can check your internal time. Keep playing through the gap!</p>
+        <div class="steppers">
+          <div class="stepper" data-key="gap.play" data-min="1" data-max="32" data-label="Play (bars)"></div>
+          <div class="stepper" data-key="gap.mute" data-min="1" data-max="32" data-label="Silent (bars)"></div>
+        </div>
+        <div class="row">
+          <span>Hide beat light while silent</span>
+          <button class="toggle" id="gapHideToggle" aria-pressed="true">On</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Settings</h3>
+        <label class="slider-row"><span>Master volume</span>
+          <input type="range" class="slider" id="masterVol" min="0" max="100"></label>
+        <div class="row">
+          <span>Keep screen awake while playing</span>
+          <button class="toggle" id="wakeToggle" aria-pressed="true">On</button>
+        </div>
+        <p class="hint">Keys: <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM (<kbd>Shift</kbd> ±5)</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<dialog id="dialog">
+  <form method="dialog">
+    <p id="dialogMsg"></p>
+    <input type="text" id="dialogInput" maxlength="60" autocomplete="off">
+    <div class="btn-row end">
+      <button value="cancel" id="dialogCancel">Cancel</button>
+      <button value="ok" class="primary" id="dialogOk">OK</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
