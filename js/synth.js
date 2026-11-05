@@ -22,6 +22,17 @@ export class DrumSynth {
       case 'hh':     return this.closedHat(t, v);
       case 'oh':     return this.openHatHit(t, v);
       case 'ride':   return this.ride(t, v);
+      case 'tom1':   return this.tom(t, v, 250, 185, 0.32);
+      case 'tom2':   return this.tom(t, v, 180, 135, 0.4);
+      case 'tom3':   return this.tom(t, v, 120, 84, 0.55);
+      case 'cowbell': return this.cowbell(t, v);
+      case 'agogoH': return this.bell(t, v, 940);
+      case 'agogoL': return this.bell(t, v, 660);
+      case 'clave':  return this.clave(t, v);
+      case 'shaker': return this.shaker(t, v);
+      case 'tamb':   return this.tambourine(t, v);
+      case 'congaH': return this.conga(t, v, 360, 0.2);
+      case 'congaL': return this.conga(t, v, 240, 0.28);
       case 'accent': return this.click(t, v, 1700, 'square');
       case 'click':  return this.click(t, v, 1100, 'square');
       case 'sub':    return this.click(t, v * 0.8, 750, 'triangle');
@@ -190,6 +201,124 @@ export class DrumSynth {
     o.connect(og).connect(this.out);
     o.start(t);
     o.stop(t + 0.4);
+  }
+
+  // --- toms and percussion -------------------------------------------------
+
+  // Tom: two detuned sines with a pitch drop, plus a stick-attack burst.
+  tom(t, v, f0, f1, decay) {
+    const ctx = this.ctx;
+    const ghost = v < 0.4;
+    for (const [mul, amp] of [[1, 0.62], [1.5, 0.18]]) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f0 * mul, t);
+      o.frequency.exponentialRampToValueAtTime(f1 * mul, t + decay * 0.6);
+      const g = this.env(t, v * amp, ghost ? decay * 0.5 : decay, 0.002);
+      o.connect(g).connect(this.out);
+      o.start(t);
+      o.stop(t + decay + 0.05);
+    }
+    const n = this.noiseSource(t, 0.03);
+    const f = this.filter('bandpass', f0 * 6, 1);
+    const ng = this.env(t, v * 0.25, 0.025, 0.001);
+    n.connect(f).connect(ng).connect(this.out);
+  }
+
+  // Cowbell (TR-808 style): two square waves through a band-pass, with a
+  // sharp initial drop and a short ring.
+  cowbell(t, v) {
+    const ctx = this.ctx;
+    const bp = this.filter('bandpass', 1000, 2.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v * 0.5, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(v * 0.15, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    for (const f of [540, 800]) {
+      const o = ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = f;
+      o.connect(bp);
+      o.start(t);
+      o.stop(t + 0.35);
+    }
+    bp.connect(g).connect(this.out);
+  }
+
+  // Agogô / bell: fundamental plus an inharmonic partial, long-ish ring.
+  bell(t, v, f) {
+    const ctx = this.ctx;
+    for (const [mul, amp, decay] of [[1, 0.45, 0.4], [2.76, 0.18, 0.18], [5.4, 0.06, 0.08]]) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f * mul;
+      const g = this.env(t, v * amp, decay, 0.001);
+      o.connect(g).connect(this.out);
+      o.start(t);
+      o.stop(t + decay + 0.05);
+    }
+  }
+
+  // Clave / woodblock: very short, bright resonant knock.
+  clave(t, v) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(2600, t);
+    o.frequency.exponentialRampToValueAtTime(2450, t + 0.03);
+    const g = this.env(t, v * 0.6, 0.045, 0.0005);
+    o.connect(g).connect(this.out);
+    o.start(t);
+    o.stop(t + 0.07);
+    const o2 = ctx.createOscillator();
+    o2.type = 'triangle';
+    o2.frequency.value = 5200;
+    const g2 = this.env(t, v * 0.12, 0.015, 0.0005);
+    o2.connect(g2).connect(this.out);
+    o2.start(t);
+    o2.stop(t + 0.03);
+  }
+
+  // Shaker: band-passed noise with a soft attack (the beads take a moment).
+  shaker(t, v) {
+    const dur = v > 0.9 ? 0.09 : 0.065;
+    const n = this.noiseSource(t, dur + 0.03);
+    const bp = this.filter('bandpass', 6500, 1.2);
+    const hp = this.filter('highpass', 3500);
+    const g = this.env(t, v * 0.5, dur, 0.012);
+    n.connect(bp).connect(hp).connect(g).connect(this.out);
+  }
+
+  // Tambourine: jingles = bright noise bursts plus a metallic shimmer.
+  tambourine(t, v) {
+    const n = this.noiseSource(t, 0.2);
+    const bp = this.filter('bandpass', 8500, 1.5);
+    const g = this.env(t, v * 0.5, 0.16, 0.002);
+    n.connect(bp).connect(g).connect(this.out);
+    const hp = this.filter('highpass', 9000);
+    const g2 = this.env(t, v * 0.18, 0.12, 0.001);
+    this.metal(t, 0.15, 95, hp);
+    hp.connect(g2).connect(this.out);
+  }
+
+  // Conga: pitched membrane with a quick pitch bend and a slap transient.
+  // Accents ring a little brighter; ghosts are short muted touches.
+  conga(t, v, f, decay) {
+    const ctx = this.ctx;
+    const ghost = v < 0.4;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f * 1.12, t);
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.025);
+    const g = this.env(t, v * 0.75, ghost ? 0.05 : decay, 0.002);
+    o.connect(g).connect(this.out);
+    o.start(t);
+    o.stop(t + decay + 0.05);
+    const n = this.noiseSource(t, 0.02);
+    const bp = this.filter('bandpass', v > 0.9 ? 2200 : 1400, 1.2);
+    const ng = this.env(t, v * (v > 0.9 ? 0.4 : 0.2), 0.015, 0.0005);
+    n.connect(bp).connect(ng).connect(this.out);
   }
 
   click(t, v, freq, type) {

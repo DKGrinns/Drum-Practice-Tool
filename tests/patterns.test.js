@@ -133,14 +133,15 @@ test('import rejects junk with a readable error', () => {
 
 test('normalize clamps bad values', () => {
   const p = P.normalizePattern({ name: 'z', stepsPerBar: 7, bars: 9, bpm: 999, swing: 5,
-    tracks: { kick: [1, 9, -1, 'x', 2], cowbell: [1] } });
+    tracks: { kick: [1, 9, -1, 'x', 2], didgeridoo: [1] } });
   assert.equal(p.stepsPerBar, 16);
   assert.equal(p.bars, 4);
   assert.equal(p.bpm, 300);
   assert.equal(p.swing, 1);
   assert.deepEqual(p.tracks.kick.slice(0, 6), [1, 0, 0, 0, 2, 0]);
   assert.equal(p.tracks.kick.length, 64);
-  assert.ok(!('cowbell' in p.tracks));
+  assert.ok(!('didgeridoo' in p.tracks));
+  assert.deepEqual(p.tracks.cowbell, new Array(64).fill(0), 'known voices missing from input are silent');
 });
 
 test('setBars repeats existing bars; setResolution maps to nearest step', () => {
@@ -157,4 +158,34 @@ test('setBars repeats existing bars; setResolution maps to nearest step', () => 
   assert.equal(p.tracks.snare[3], P.HIT, 'beat 2 stays on beat 2');
   P.setResolution(p, 16);
   assert.equal(p.tracks.snare[4], P.HIT);
+});
+
+test('files from version 1 (core kit only) still import, new voices silent', () => {
+  const v1 = JSON.stringify({ format: 'groove-trainer-patterns', version: 1, patterns: [{
+    id: 'p_old', name: 'Old', stepsPerBar: 16, bars: 1, bpm: 90, swing: 0, swingRes: 16,
+    tracks: { ride: '----------------', oh: '----------------', hh: 'x-x-x-x-x-x-x-x-',
+      rim: '----------------', snare: '----X-------X---', kick: 'X-------X-------' } }] });
+  const [p] = P.importPatterns(v1);
+  assert.equal(p.tracks.snare[4], P.ACCENT);
+  for (const v of P.KIT_VOICES) assert.equal(p.tracks[v.id].length, 16, v.id);
+  assert.ok(p.tracks.congaH.every(x => x === 0));
+});
+
+test('export leaves out silent tracks and keeps percussion', () => {
+  const p = P.blankPattern('Perc');
+  p.tracks.clave[0] = P.HIT;
+  p.tracks.congaL[6] = P.ACCENT;
+  const data = JSON.parse(P.exportPatterns([p]));
+  assert.deepEqual(Object.keys(data.patterns[0].tracks).sort(), ['clave', 'congaL']);
+  const [back] = P.importPatterns(JSON.stringify(data));
+  assert.deepEqual(back.tracks, p.tracks);
+});
+
+test('every kit voice has a label, short name, group and default volume', () => {
+  const ids = new Set();
+  for (const v of P.KIT_VOICES) {
+    assert.ok(v.label && v.short && ['kit', 'perc'].includes(v.group) && v.vol > 0 && v.vol <= 1, v.id);
+    assert.ok(!ids.has(v.id), 'duplicate ' + v.id);
+    ids.add(v.id);
+  }
 });

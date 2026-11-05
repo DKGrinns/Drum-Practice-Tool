@@ -19,14 +19,31 @@ import * as store from './storage.js';
 
 export const OFF = 0, HIT = 1, ACCENT = 2, GHOST = 3;
 
-// Kit voices, top-to-bottom as shown in the builder grid.
+// Kit voices, top-to-bottom as shown in the builder grid and mixer.
+//   group 'kit'  = the core drum kit (always shown in the builder)
+//   group 'perc' = toms and hand percussion (shown in the builder when the
+//                  pattern uses them, or when "All drums" is on)
+//   short = label for narrow screens, vol = default mixer level.
+// Adding a voice: add it here, add a sound for its id in synth.js, and old
+// saved patterns/exported files still load (missing tracks become silent).
 export const KIT_VOICES = [
-  { id: 'ride',  label: 'Ride' },
-  { id: 'oh',    label: 'Open HH' },
-  { id: 'hh',    label: 'Closed HH' },
-  { id: 'rim',   label: 'Rim / X-stick' },
-  { id: 'snare', label: 'Snare' },
-  { id: 'kick',  label: 'Kick' },
+  { id: 'ride',    label: 'Ride',          short: 'Ride', group: 'kit',  vol: 0.8 },
+  { id: 'oh',      label: 'Open HH',       short: 'OH',   group: 'kit',  vol: 0.8 },
+  { id: 'hh',      label: 'Closed HH',     short: 'HH',   group: 'kit',  vol: 0.8 },
+  { id: 'rim',     label: 'Rim / X-stick', short: 'Rim',  group: 'kit',  vol: 0.9 },
+  { id: 'snare',   label: 'Snare',         short: 'Snr',  group: 'kit',  vol: 0.9 },
+  { id: 'kick',    label: 'Kick',          short: 'Kick', group: 'kit',  vol: 1.0 },
+  { id: 'tom1',    label: 'High tom',      short: 'T1',   group: 'perc', vol: 0.85 },
+  { id: 'tom2',    label: 'Mid tom',       short: 'T2',   group: 'perc', vol: 0.85 },
+  { id: 'tom3',    label: 'Floor tom',     short: 'FT',   group: 'perc', vol: 0.9 },
+  { id: 'cowbell', label: 'Cowbell',       short: 'Cow',  group: 'perc', vol: 0.7 },
+  { id: 'agogoH',  label: 'Agogô high',    short: 'AgH',  group: 'perc', vol: 0.7 },
+  { id: 'agogoL',  label: 'Agogô low',     short: 'AgL',  group: 'perc', vol: 0.7 },
+  { id: 'clave',   label: 'Clave',         short: 'Clv',  group: 'perc', vol: 0.75 },
+  { id: 'shaker',  label: 'Shaker',        short: 'Shk',  group: 'perc', vol: 0.7 },
+  { id: 'tamb',    label: 'Tambourine',    short: 'Tmb',  group: 'perc', vol: 0.65 },
+  { id: 'congaH',  label: 'Conga high',    short: 'CgH',  group: 'perc', vol: 0.85 },
+  { id: 'congaL',  label: 'Conga low',     short: 'CgL',  group: 'perc', vol: 0.85 },
 ];
 export const KIT_IDS = KIT_VOICES.map(v => v.id);
 
@@ -247,8 +264,9 @@ export function exportPatterns(patterns) {
     format: EXPORT_FORMAT,
     version: 1,
     exported: new Date().toISOString(),
+    // Silent tracks are left out to keep files small; they load as silent.
     patterns: patterns.map(p => ({ ...p, tracks: Object.fromEntries(
-      KIT_IDS.map(id => [id, trackToString(p.tracks[id])])) })),
+      KIT_IDS.filter(id => p.tracks[id].some(v => v)).map(id => [id, trackToString(p.tracks[id])])) })),
   }, null, 2);
 }
 

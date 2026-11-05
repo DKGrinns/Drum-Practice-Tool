@@ -55,12 +55,8 @@
 
   <!-- ===================== PANELS ===================== -->
   <div class="panels">
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="metronome">Metronome</button>
-      <button role="tab" data-tab="grooves">Grooves</button>
-      <button role="tab" data-tab="builder">Builder</button>
-      <button role="tab" data-tab="trainer">Trainer</button>
-    </nav>
+    <!-- Tabs are built by js/ui/core.js from the registered panels. -->
+    <nav class="tabs" id="tabs" role="tablist"></nav>
 
     <!-- Metronome -->
     <section class="panel" id="panel-metronome" role="tabpanel">
@@ -126,10 +122,11 @@
           <div class="seg" id="barsSeg" role="group" aria-label="Bars">
             <button data-value="1">1 bar</button><button data-value="2">2</button><button data-value="3">3</button><button data-value="4">4</button>
           </div>
+          <button id="allDrums" class="toggle-btn" aria-pressed="false" title="Show toms and percussion rows">All drums</button>
           <button id="pClear" class="danger">Clear</button>
         </div>
         <div class="grid" id="grid"></div>
-        <p class="hint legend">Tap a cell: off → <span class="lg hit"></span> hit → <span class="lg accent"></span> accent → <span class="lg ghost"></span> ghost → off. Tap a drum name to hear it.</p>
+        <p class="hint legend">Tap a cell: off → <span class="lg hit"></span> hit → <span class="lg accent"></span> accent → <span class="lg ghost"></span> ghost → off. Tap a drum name to hear it. <b>All drums</b> shows toms and percussion.</p>
       </div>
       <div class="card">
         <h3>Mixer</h3>

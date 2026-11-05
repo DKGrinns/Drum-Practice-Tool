@@ -16,21 +16,21 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 is done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Step 1 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
-Code layout: `js/app.js` (UI), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
+Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
 **Deployment:** turn Pages on once, under Settings → Pages → Source: **GitHub Actions**. The site is then at https://dkgrinns.github.io/Drum-Practice-Tool/
 
 ## Build order
 
-### Step 1 — Groundwork and new sounds
-- [ ] Split `js/app.js` into one module per panel (e.g. `js/ui/metronome.js`, `grooves.js`, `builder.js`, `trainer.js`) plus shared widgets, so later features add a panel without touching everything.
-- [ ] Add a way to register panels and tabs (the tab bar will grow, so make it scroll on phones or add a "More" menu).
-- [ ] New synthesized voices: high tom, mid tom, floor tom, cowbell, clave/woodblock, shaker. Possibly also: conga/tumba, surdo, agogô bells, tambourine.
-- [ ] Add the new voices to the builder grid (possibly with a "show all drums" toggle so the grid stays short), the mixer, and the pattern import/export format (old files must still import).
-- [ ] Add a step "probability" or flam field only if it is cheap; otherwise leave it out.
-- [ ] Add tests for any pattern-format changes.
+### Step 1 — Groundwork and new sounds ✅ (done)
+- [x] Split `js/app.js` into `js/ui/` modules: core (settings, engine, event bus, source and tab registries), widgets, transport, metronome, grooves, builder, trainer, mixer, keyboard.
+- [x] Tabs are registered from modules (`registerPanel`); the tab bar scrolls sideways on phones when it gets more tabs.
+- [x] New synthesized voices: high/mid/floor tom, cowbell, agogô high/low, clave, shaker, tambourine, conga high/low (17 voices in all).
+- [x] Builder shows the core kit plus any extra drum the pattern uses; an **All drums** toggle shows every row. The mixer has a collapsible "Toms & percussion" section.
+- [x] Pattern format: exports leave out silent tracks; old (v1) files and saved settings still load (tested).
+- [ ] Step probability / flams: skipped for now (not cheap). Revisit later if wanted.
 
 ### Step 2 — Groove library expansion
 Allow grooves with 2–4 bars, and consider 3/4 and 6/8 grooves (needs `beatsPerBar` in patterns).
@@ -96,6 +96,9 @@ This must work well.
 - [ ] Share a pattern as a link (pattern encoded in the URL hash); opening the link offers to import it.
 
 ## Notes for the next session
+
+- Next up: **Step 2, groove library expansion.** All 17 voices can be used in `js/grooves.js` (ids: ride, oh, hh, rim, snare, kick, tom1, tom2, tom3, cowbell, agogoH, agogoL, clave, shaker, tamb, congaH, congaL). The grooves panel filter is currently a flat style list (`STYLES` in grooves.js); with many more grooves it needs genre families and a search box.
+- New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.
 - The user plays mostly reggae, funk, soul and jazz fusion, and also wants Latin and Brazilian grooves.

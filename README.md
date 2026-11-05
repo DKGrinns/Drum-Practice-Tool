@@ -4,7 +4,7 @@ A drum practice app for reggae, funk, soul and fusion players. It has a metronom
 
 **Live app:** https://dkgrinns.github.io/Drum-Practice-Tool/
 
-All the sounds (kick, snare, cross-stick, hi-hats, ride and clicks) are synthesized with the Web Audio API, so nothing is downloaded. Your settings and patterns are saved in the browser on your device.
+All the sounds (kick, snare, cross-stick, hi-hats, ride, three toms, cowbell, agogô bells, clave, shaker, tambourine, congas and the clicks) are synthesized with the Web Audio API, so nothing is downloaded. Your settings and patterns are saved in the browser on your device.
 
 ## Install it as an app
 
@@ -26,8 +26,8 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
 
 - **Metronome:** choose 4/4, 3/4, 5/4, 6/8, 12/8 or 7/8, and quarters, 8ths, triplets or 16ths. You can turn the beat-1 accent on or off, and the click and the subdivision click have separate volumes. In 6/8 and 12/8 the BPM counts the dotted quarter (12/8 = four big beats). In 7/8 it counts eighth notes, grouped 2+2+3.
 - **Swing:** goes from straight (0%) to a full triplet shuffle (100%), on 8th-note or 16th-note pairs. Triplet grids are already swung, so swing has no effect on them and the slider dims.
-- **Grooves:** tap a groove to load it with its own tempo and swing, then press PLAY. Tap it again to restore its default tempo. The mixer lets you mute or turn down any drum, for example mute the kick and play it yourself. The **Click** channel adds a metronome click on top of the groove. **Open in Builder** copies the groove into the pattern builder.
-- **Builder:** a grid of 16ths or triplets, 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
+- **Grooves:** tap a groove to load it with its own tempo and swing, then press PLAY. Tap it again to restore its default tempo. The mixer lets you mute or turn down any drum, for example mute the kick and play it yourself. Toms and percussion are under **Toms & percussion** in the mixer. The **Click** channel adds a metronome click on top of the groove. **Open in Builder** copies the groove into the pattern builder.
+- **Builder:** a grid of 16ths or triplets, 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. The grid shows the core kit plus any toms or percussion the pattern uses; press **All drums** to show every row (toms, cowbell, agogô, clave, shaker, tambourine, congas). You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
@@ -48,7 +48,8 @@ Grooves live in [`js/grooves.js`](js/grooves.js). Add an object to the `GROOVES`
   steps: 16,                  // 16 = 16th grid, 12 = triplet grid (per bar of 4/4)
   swing: 0.2, swingRes: 16,   // optional default swing (0..1) on 8ths or 16ths
   desc: 'One sentence about the feel.',
-  tracks: {                   // any of: ride, oh, hh, rim, snare, kick
+  tracks: {                   // any of: ride, oh, hh, rim, snare, kick, tom1, tom2, tom3,
+                              // cowbell, agogoH, agogoL, clave, shaker, tamb, congaH, congaL
     hh:    'XxXx XxXx XxXx XxXx',
     snare: '---- X--g -g-- X---',
     kick:  'X--x --X- --X- -x--',
@@ -72,7 +73,11 @@ npm test                        # timing + pattern save/load tests (Node 18+, no
 | File | What it does |
 |---|---|
 | `index.html`, `css/style.css` | Layout: mobile-first, dark, high contrast |
-| `js/app.js` | UI wiring and settings |
+| `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
+| `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
+| `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `trainer.js` | One module per tab |
+| `js/ui/mixer.js`, `widgets.js`, `keyboard.js` | Mixer, shared UI helpers, desktop shortcuts |
 | `js/engine.js` | AudioContext and the lookahead scheduler loop |
 | `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer |
 | `js/synth.js` | Synthesized drum voices |
@@ -82,6 +87,10 @@ npm test                        # timing + pattern save/load tests (Node 18+, no
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline support and installability |
 
 **How the timing works:** a worker timer wakes the engine every 25 ms. That timer never times notes itself. On each wake-up, the sequencer works out the exact audio-clock time of every step in the next 120 ms, and Web Audio plays those notes sample-accurately. Step times come from the beat start and the beat length rather than from adding up timer intervals, so there is no drift. The tests check this over 1000 bars.
+
+**Adding a feature tab:** write `js/ui/<feature>.js` exporting `panel` (`{ id, label, source?, onShow? }`), add a `<section id="panel-<id>" class="panel">` to `index.html`, and register it in `js/app.js`. Modules talk through the event bus in `core.js` (`step`, `play`, `stop`, `sequence`, `tempo`).
+
+**Adding a drum sound:** add it to `KIT_VOICES` in `js/patterns.js` and give it a sound in `js/synth.js`. Old saved patterns and exported files still load.
 
 **When you change app files**, bump `CACHE_VERSION` in `sw.js`. Installed copies then download the new version in the background and use it on their next launch.
 
