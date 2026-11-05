@@ -6,7 +6,7 @@ import { setSeg, segHandler, setToggle } from './widgets.js';
 import { METERS, SUBDIVISIONS, subdivisionInfo, resolveSubdivision, metronomeSequence } from '../patterns.js';
 
 registerSource('metronome', {
-  sequence: () => metronomeSequence(S),
+  sequence: () => metronomeSequence(S), // includes clickMode / sparseBars from the Trainer tab
   describe: () => {
     const sub = subdivisionInfo(S.meter)[S.subdivision];
     return `<b>Metronome</b> · ${S.meter} · ${sub ? sub.label : ''}`;

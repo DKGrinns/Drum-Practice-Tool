@@ -271,12 +271,21 @@ export function resolveSubdivision(meterKey, sub) {
   return SUBDIVISIONS.find(s => info[s]);
 }
 
-// Build a one-bar click pattern. Voices: 'accent' (beat 1), 'click' (other
-// beats) and 'sub' (subdivisions, with its own volume).
-export function metronomeSequence({ meter = '4/4', subdivision = 'quarter', accent = true } = {}) {
+// Build a click pattern. Voices: 'accent' (beat 1), 'click' (other beats)
+// and 'sub' (subdivisions, with its own volume).
+// clickMode (time-feel trainer):
+//   all       normal metronome
+//   backbeat  only 2 and 4 (every other beat starting on 2)
+//   offbeats  only the "&" of each beat
+//   one       only beat 1
+//   sparse    only beat 1 of every `sparseBars` bars
+// In the reduced modes the subdivision clicks are left out, so you supply
+// the missing beats yourself.
+export function metronomeSequence({ meter = '4/4', subdivision = 'quarter', accent = true, clickMode = 'all', sparseBars = 4 } = {}) {
   const m = METERS[meter] || METERS['4/4'];
   const sub = resolveSubdivision(meter, subdivision);
-  const spb = subdivisionInfo(meter)[sub].spb;
+  let spb = subdivisionInfo(meter)[sub].spb;
+  if (clickMode !== 'all') return reducedClicks(m, spb, clickMode, sparseBars);
   const len = m.beats * spb;
   const tracks = {
     accent: new Array(len).fill(OFF),
@@ -298,6 +307,21 @@ export function metronomeSequence({ meter = '4/4', subdivision = 'quarter', acce
     for (let s = 1; s < spb; s++) tracks.sub[i + s] = HIT;
   }
   return { spb, beatsPerBar: m.beats, bars: 1, tracks };
+}
+
+function reducedClicks(m, spb, mode, sparseBars) {
+  if (mode === 'offbeats' && spb === 1) spb = 2; // need an "&" step
+  const bars = mode === 'sparse' ? Math.max(1, Math.min(16, Math.round(sparseBars) || 4)) : 1;
+  const len = m.beats * spb * bars;
+  const tracks = { accent: new Array(len).fill(OFF), click: new Array(len).fill(OFF), sub: new Array(len).fill(OFF) };
+  const off = spb % 2 === 0 ? spb / 2 : spb - 1;
+  for (let beat = 0; beat < m.beats; beat++) {
+    const i = beat * spb;
+    if (mode === 'one' || mode === 'sparse') { if (beat === 0) tracks.accent[i] = ACCENT; }
+    else if (mode === 'backbeat') { if (beat % 2 === 1) tracks.click[i] = HIT; }
+    else if (mode === 'offbeats') tracks.click[i + off] = HIT;
+  }
+  return { spb, beatsPerBar: m.beats, bars, tracks };
 }
 
 // ---------------------------------------------------------------------------

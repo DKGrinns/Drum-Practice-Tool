@@ -30,6 +30,11 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   - Grooves "felt in 2", like salsa, mambo and rumba, use their real tempo (e.g. salsa at 180). The 7/8 groove counts eighth notes as beats.
   - Grooves marked "Kit Adaptation" are simplified versions of percussion-ensemble rhythms. Use them as a starting point, and adjust them in the builder to match the records you're playing along to.
 - **Builder:** a grid in 4/4, 3/4, 5/4 or 7/8, with 16ths or triplets (7/8 is 16ths only), 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. The grid shows the core kit plus any toms or percussion the pattern uses; press **All drums** to show every row (toms, cowbell, agogô, clave, shaker, tambourine, congas). You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
+- **Feel** (time-feel trainers):
+  - *Click:* thin the click out so you have to supply the missing beats. Choose every beat, 2 & 4 only, the "&"s only, beat 1 only, or one click every N bars. This works with the metronome and, when **Click under grooves & patterns** is on, under any groove.
+  - *Click dropout:* random beats go completely silent, both the click and the groove. Keep playing through them. You can always keep beat 1, and **Get harder** adds 10% more silent beats every few bars, up to a limit you set.
+  - *Push / pull:* move the whole groove ahead of the click (pushing) or behind it (laid back), up to 50 ms. Per-drum timing lets you set, for example, a lazy snare or a late kick. The presets include Laid back, Pushing, Lazy backbeat, Reggae lean and Dilla drunk. The click never moves; it's your reference.
+  - *Humanize:* small random timing (up to ±12 ms) and volume changes on every hit. Clicks stay perfect.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
@@ -80,10 +85,11 @@ npm test                        # timing + pattern save/load tests (Node 18+, no
 | `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
 | `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
 | `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
-| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `trainer.js` | One module per tab |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `feel.js`, `trainer.js` | One module per tab |
 | `js/ui/mixer.js`, `widgets.js`, `keyboard.js` | Mixer, shared UI helpers, desktop shortcuts |
 | `js/engine.js` | AudioContext and the lookahead scheduler loop |
-| `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer |
+| `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer, click dropout, click modes |
+| `js/feel.js` | Push/pull offsets, per-drum microtiming, humanize (pure functions) |
 | `js/synth.js` | Synthesized drum voices |
 | `js/patterns.js` | Pattern model, metronome patterns, saved-pattern library, JSON import/export |
 | `js/grooves.js` | The groove library |

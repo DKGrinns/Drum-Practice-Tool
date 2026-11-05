@@ -2,7 +2,7 @@
 // gets a copy; all copies stay in sync. The core kit is always shown;
 // toms and percussion sit in a collapsible section.
 
-import { S, saveSettings } from './core.js';
+import { S, saveSettings, bus } from './core.js';
 import { KIT_VOICES } from '../patterns.js';
 
 const row = v => `
@@ -39,6 +39,7 @@ document.querySelectorAll('[data-mixer]').forEach(box => {
     m.mute = !m.mute;
     renderMixers();
     saveSettings();
+    bus.emit('mix');
   });
   box.addEventListener('input', e => {
     const r = e.target.closest('.mix-row');
@@ -48,5 +49,6 @@ document.querySelectorAll('[data-mixer]').forEach(box => {
     if (m.mute && m.vol > 0) m.mute = false; // moving a muted fader un-mutes it
     renderMixers();
     saveSettings();
+    bus.emit('mix');
   });
 });

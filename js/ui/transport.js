@@ -3,7 +3,7 @@
 
 import { $, clamp, S, saveSettings, engine, bus, refreshSequence, getActiveSeq, describeSource } from './core.js';
 import { setSeg, segHandler, holdRepeat } from './widgets.js';
-import { trainerBpm } from '../sequencer.js';
+import { trainerBpm, dropoutAmount } from '../sequencer.js';
 import { METERS, isTriplet } from '../patterns.js';
 
 const trainerOn = () => S.trainer.enabled;
@@ -223,6 +223,10 @@ export function renderStatus(ev) {
       parts.push(`Gap: play ${gap.play}, silent ${gap.mute}`);
     }
   }
+  const d = S.dropout;
+  if (d.enabled) parts.push(`Dropout ${ev ? dropoutAmount(d, ev.barCount) : d.amount}%${d.progressive ? ' ↑' : ''}`);
+  const modes = { backbeat: 'Click 2 & 4', offbeats: 'Click on &s', one: 'Click on 1', sparse: `Click every ${S.sparseBars} bars` };
+  if (modes[S.clickMode]) parts.push(modes[S.clickMode]);
   $('statusLine').innerHTML = parts.join(' · ');
 }
 

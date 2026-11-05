@@ -12,6 +12,7 @@
 
 import { Sequencer } from './sequencer.js';
 import { DrumSynth } from './synth.js';
+import { CLICK_VOICES, voiceOffset, humanize } from './feel.js';
 
 const TICK_MS = 25;
 const LOOKAHEAD = 0.12; // seconds of audio scheduled ahead of the clock
@@ -37,12 +38,15 @@ function createTicker(onTick) {
 export class Engine {
   // config: live settings object (see Sequencer).
   // getLevel(voice) -> 0..1: current volume for a voice (0 = muted).
-  // extraClick(event) -> boolean: add a beat click on this step (used to put
-  //   a click under grooves).
-  constructor({ config, getLevel, extraClick }) {
+  // clickFor(event) -> 'accent' | 'click' | null: an extra click on this
+  //   step (the click layer under grooves).
+  // getFeel() -> feel settings (see feel.js): push/pull, per-drum offsets,
+  //   humanize.
+  constructor({ config, getLevel, clickFor, getFeel }) {
     this.ctx = null;
     this.getLevel = getLevel;
-    this.extraClick = extraClick || (() => false);
+    this.clickFor = clickFor || (() => null);
+    this.getFeel = getFeel || (() => null);
     this.visualQueue = [];
     this.playing = false;
     this.seq = new Sequencer(config, ev => this.handleStep(ev));
@@ -105,14 +109,25 @@ export class Engine {
 
   handleStep(ev) {
     if (!ev.muted) {
+      const feel = this.getFeel();
+      const human = feel && feel.humanize ? feel.humanize / 100 : 0;
+      // Never schedule in the past (a negative "pushing" offset on a step
+      // that is already close to now).
+      const earliest = this.ctx.currentTime + 0.002;
       for (const h of ev.hits) {
         const level = this.getLevel(h.voice);
-        if (level > 0) this.synth.play(h.voice, ev.time, h.velocity * level);
+        if (level <= 0) continue;
+        let t = ev.time, vel = h.velocity * level;
+        if (!CLICK_VOICES.has(h.voice)) {
+          t += voiceOffset(feel, h.voice);
+          if (human) { const r = humanize(human); t += r.dt; vel *= r.dv; }
+        }
+        this.synth.play(h.voice, Math.max(t, earliest), Math.min(1.2, vel));
       }
-      if (ev.stepInBeat === 0 && this.extraClick(ev)) {
-        const voice = ev.beat === 0 ? 'accent' : 'click';
+      const click = this.clickFor(ev);
+      if (click) {
         const level = this.getLevel('grooveClick');
-        if (level > 0) this.synth.play(voice, ev.time, 0.9 * level);
+        if (level > 0) this.synth.play(click, ev.time, 0.9 * level);
       }
     }
     this.visualQueue.push(ev);

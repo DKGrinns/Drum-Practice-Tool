@@ -16,7 +16,7 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Steps 1–2 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–3 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
 Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
@@ -53,12 +53,13 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] Tests: every groove's length, voices, meter and family are checked; son clave positions, 3/4 / 5/4 / 7/8 playback and `setMeter` are tested.
 - [ ] Still to add later: ijexá, Mozambique, cáscara/mambo-bell variations, highlife/Afrobeat bell variations, more Rock & Pop (half-time, pop ballad). Several Latin/Brazilian patterns are marked "Kit Adaptation"; the user may want to refine them by ear.
 
-### Step 3 — Time-feel trainers (section 2)
-- [ ] Click modes: every beat, on the "&"s only, 2 and 4 only, beat 1 only, one click every N bars.
-- [ ] Gradual click dropout: random beats go silent, and the dropout rate increases as you keep good time (or stays at a set level).
-- [ ] Push/pull: move the click or the groove ahead of or behind the beat by ±ms, to practise laying back or pushing.
-- [ ] Per-drum microtiming offsets in grooves (e.g. snare +15 ms behind), plus a "humanize" amount (small random timing and velocity changes).
-- [ ] Tests in `tests/sequencer.test.js` for every new timing rule.
+### Step 3 — Time-feel trainers (section 2) ✅ (done)
+- [x] Click modes: every beat, 2 & 4, the "&"s only, beat 1 only, beat 1 every N bars. They work for the metronome (`metronomeSequence` clickMode) and for the click layer under grooves (`clickLayer` in sequencer.js).
+- [x] Click dropout: random silent beats (click and groove), seeded random generator, keep-beat-1 option, progressive mode (+10% every N bars up to a max).
+- [x] Push/pull: whole-groove offset ±50 ms vs. the click, plus per-drum offsets (kick, snare & rim, hats, ride, percussion) and presets (`js/feel.js`). The engine applies them when scheduling and never schedules in the past.
+- [x] Humanize: random timing ±12 ms and velocity ±25% at 100%. Clicks are never moved or humanized.
+- [x] New **Feel** tab (`js/ui/feel.js`); the status line shows dropout % and the click mode.
+- [x] Tests: `tests/feel.test.js` (click modes, sparse timing, click layer, dropout rate, repeatability and beat-1 safety, beat-level muting in grooves, offsets, humanize limits). A browser check measured the real scheduled times: kick +20 ms, snare +35 ms with a 20 ms groove offset and a +15 ms snare offset.
 
 ### Step 4 — Playing feedback A: microphone timing analysis (section 1)
 This must work well.
@@ -107,7 +108,10 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 3, time-feel trainers.** The sequencer is in `js/sequencer.js` (pure and tested in `tests/sequencer.test.js`). Click modes and dropout can be done in the engine's `extraClick` / metronome pattern; push/pull and microtiming need a per-voice time offset applied in `Engine.handleStep` (offsets must stay inside the 120 ms lookahead, or be scheduled with a delay).
+- Next up: **Step 4, microphone timing analysis** (must work well). Useful hooks:
+  - `bus.on('step', ev)` gives each step as it is heard; `ev.time` is on the audio clock (`engine.ctx.currentTime`).
+  - The Sequencer can tell you the grid time of every step. For scoring, match mic onsets against the scheduled step times; collect them in `Engine.handleStep`, which knows each step's exact time, rather than in the visual queue.
+  - Use an AudioWorklet for onset detection, and keep the detection maths in a pure module so it can be tested in Node with synthetic buffers.
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.

@@ -9,6 +9,7 @@
 //                'play' / 'stop'
 //                'sequence' (seq)  the playing source or its pattern changed
 //                'tempo'           BPM / trainer settings changed
+//                'mix'             a mixer level or mute changed
 //   sources    what the play button can play (metronome, groove, builder,
 //              and later features). registerSource() adds one.
 //   panels     the tabs. registerPanel() adds one; the tab bar is built
@@ -18,6 +19,7 @@ import * as store from '../storage.js';
 import { Engine } from '../engine.js';
 import { METERS, resolveSubdivision, KIT_VOICES } from '../patterns.js';
 import { GROOVES } from '../grooves.js';
+import { clickLayer } from '../sequencer.js';
 
 export const $ = id => document.getElementById(id);
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -34,6 +36,10 @@ const DEFAULTS = {
   clickVol: 0.8, subVol: 0.45,
   trainer: { enabled: false, start: 80, target: 120, step: 5, every: 4 },
   gap: { enabled: false, play: 3, mute: 1, hideVisual: true },
+  // Time-feel trainers (see feel.js and sequencer.js)
+  clickMode: 'all', sparseBars: 4,
+  dropout: { enabled: false, amount: 25, progressive: false, max: 75, every: 4, keepOne: true },
+  feel: { offset: 0, kick: 0, snare: 0, hats: 0, ride: 0, perc: 0, humanize: 0 },
   mix: mixDefaults,
   master: 0.9, wakeLock: true,
   tab: 'metronome', source: 'metronome', grooveId: GROOVES[0].id, styleFilter: 'All',
@@ -98,8 +104,10 @@ export function getLevel(voice) {
 export const engine = new Engine({
   config: S,
   getLevel,
-  // Optional beat click under grooves/patterns (the "Click" mixer channel).
-  extraClick: () => S.source !== 'metronome' && getLevel('grooveClick') > 0,
+  // Optional click under grooves/patterns (the "Click" mixer channel),
+  // following the click mode of the time-feel trainer.
+  clickFor: ev => (S.source !== 'metronome' && getLevel('grooveClick') > 0 ? clickLayer(S.clickMode, ev, S.sparseBars) : null),
+  getFeel: () => S.feel,
 });
 engine.setMasterVolume(S.master);
 

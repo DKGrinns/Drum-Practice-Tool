@@ -22,6 +22,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body {
   font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -227,6 +228,14 @@ select {
 .grid-label.sep, .cell.sep { margin-top: 8px; }
 .grid-label.sep { border-top: 1px dashed var(--line); border-radius: 0; }
 .toggle-btn[aria-pressed=true] { background: var(--beat); color: #04221c; border-color: transparent; font-weight: 700; }
+.mini-stepper { display: inline-grid; grid-template-columns: 48px 3em 48px; align-items: center; gap: 4px; }
+.mini-stepper button { padding: 0; font-size: 1.3rem; font-weight: 800; }
+.mini-stepper output { text-align: center; font-size: 1.3rem; font-weight: 800; }
+.slider-row b { color: var(--text); font-weight: 700; }
+.slider-row.wide { grid-template-columns: 1fr; gap: 0; }
+.scale-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.78rem; margin-top: -4px; }
+.drum-offsets { margin-top: 8px; }
+.drum-offsets summary { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; color: var(--muted); cursor: pointer; }
 .mix-more { margin-top: 6px; border-top: 1px solid var(--line); }
 .mix-more summary { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; color: var(--muted); cursor: pointer; }
 .cell.now, .grid-head.now { outline: 2px solid var(--text); outline-offset: -2px; }

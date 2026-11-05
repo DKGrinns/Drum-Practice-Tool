@@ -8,7 +8,7 @@
 //
 // Tempo is read at each beat boundary, so BPM changes take effect on the next
 // beat. The tempo trainer and gap (mute) trainer are evaluated at each bar
-// boundary.
+// boundary. Click dropout is decided at each beat.
 
 export const VELOCITY = [0, 0.78, 1.0, 0.28]; // off, hit, accent, ghost
 
@@ -57,6 +57,58 @@ export function gapMuted(gap, bar) {
   return bar % (play + mute) >= play;
 }
 
+// Click dropout: what percentage of beats go silent in this bar.
+// Progressive mode starts at `amount` and adds 10% every `every` bars, up to
+// `max`.
+export function dropoutAmount(d, bar) {
+  const base = clamp(d.amount, 0, 95);
+  if (!d.progressive) return base;
+  const every = Math.max(1, Math.round(d.every) || 1);
+  return clamp(base + 10 * Math.floor(bar / every), 0, clamp(d.max, base, 95));
+}
+
+// Should this beat be silent? `rand` returns 0..1. Beat 1 is kept if
+// `keepOne` is on, so you always have a landmark.
+export function beatDropped(d, bar, beat, rand) {
+  if (!d || !d.enabled) return false;
+  if (d.keepOne && beat === 0) return false;
+  return rand() * 100 < dropoutAmount(d, bar);
+}
+
+// Small seeded random generator, so dropout is repeatable in tests.
+export function seededRandom(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Click layer played on top of grooves and patterns (the "Click" mixer
+// channel). Returns 'accent', 'click' or null for a step.
+//   all       every beat (beat 1 accented)
+//   backbeat  2 and 4 (every other beat, starting on 2)
+//   offbeats  the "&" of every beat (on triplet grids: the last triplet)
+//   one       beat 1 only
+//   sparse    beat 1 of every Nth bar only
+export function clickLayer(mode, ev, sparseBars = 4) {
+  const onBeat = ev.stepInBeat === 0;
+  switch (mode) {
+    case 'one':      return onBeat && ev.beat === 0 ? 'accent' : null;
+    case 'backbeat': return onBeat && ev.beat % 2 === 1 ? 'click' : null;
+    case 'sparse':   return onBeat && ev.beat === 0 && ev.barCount % Math.max(1, sparseBars) === 0 ? 'accent' : null;
+    case 'offbeats': {
+      if (ev.spb < 2) return null;
+      const off = ev.spb % 2 === 0 ? ev.spb / 2 : ev.spb - 1;
+      return ev.stepInBeat === off ? 'click' : null;
+    }
+    default:         return onBeat ? (ev.beat === 0 ? 'accent' : 'click') : null;
+  }
+}
+
 export class Sequencer {
   // `config` is a live object owned by the app:
   //   { bpm, swing, swingRes, trainer: {enabled,start,target,step,every},
@@ -82,7 +134,8 @@ export class Sequencer {
     }
   }
 
-  start(time) {
+  start(time, seed = Date.now()) {
+    this.rand = seededRandom(seed);
     this.running = true;
     this.barCount = 0;      // bars since start (drives the trainers)
     this.patternBar = 0;    // bar inside the pattern
@@ -114,6 +167,12 @@ export class Sequencer {
     this.beatStart = time;
     this.beatDur = 60 / this.currentBpm();
     this.lastTime = -Infinity;
+    this.beginBeat();
+  }
+
+  // Decide once per beat whether click dropout silences it.
+  beginBeat() {
+    this.beatMuted = beatDropped(this.config.dropout, this.barCount, this.beatInBar, this.rand || Math.random);
   }
 
   // Exact time of the step we are about to play.
@@ -162,7 +221,8 @@ export class Sequencer {
       beatsPerBar,
       stepInBeat: this.stepInBeat,
       spb,
-      muted: this.barMuted,
+      muted: this.barMuted || this.beatMuted,   // silent (gap trainer or dropout)
+      dropped: this.beatMuted,                 // silent because of click dropout
       bpm: this.currentBpm(),
     });
   }
@@ -181,6 +241,7 @@ export class Sequencer {
       this.beginBar(this.beatStart);
     } else {
       this.beatDur = 60 / this.currentBpm();
+      this.beginBeat();
     }
   }
 

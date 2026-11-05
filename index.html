@@ -138,6 +138,77 @@
       </div>
     </section>
 
+    <!-- Feel: time-feel trainers (js/ui/feel.js) -->
+    <section class="panel" id="panel-feel" role="tabpanel">
+      <div class="card">
+        <h3>Click</h3>
+        <p class="hint">Thin out the click so you have to supply the missing beats. Works with the metronome, and under grooves and patterns.</p>
+        <div class="seg wrap" id="clickModeSeg">
+          <button data-value="all">Every beat</button>
+          <button data-value="backbeat">2 &amp; 4</button>
+          <button data-value="offbeats">The "&amp;"s</button>
+          <button data-value="one">Beat 1</button>
+          <button data-value="sparse">Every N bars</button>
+        </div>
+        <div class="row" id="sparseRow">
+          <span>One click every</span>
+          <div class="mini-stepper"><button id="sparseDown" aria-label="Fewer bars">−</button><output id="sparseVal">4</output><button id="sparseUp" aria-label="More bars">+</button></div>
+          <span>bars</span>
+        </div>
+        <div class="row">
+          <span>Click under grooves &amp; patterns</span>
+          <button class="toggle" id="grooveClickToggle" aria-pressed="false">Off</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <h3>Click dropout</h3>
+          <button class="toggle" id="dropToggle" aria-pressed="false">Off</button>
+        </div>
+        <p class="hint">Random beats go completely silent. Keep playing through them — when the sound comes back you should still be on it.</p>
+        <label class="slider-row"><span>Silent beats <b id="dropAmountVal">25%</b></span>
+          <input type="range" class="slider" id="dropAmount" min="0" max="90" step="5"></label>
+        <div class="row">
+          <span>Always keep beat 1</span>
+          <button class="toggle" id="dropKeepOne" aria-pressed="true">On</button>
+        </div>
+        <div class="row">
+          <span>Get harder (+10% every <output id="dropEveryVal">4</output> bars)</span>
+          <button class="toggle" id="dropProgressive" aria-pressed="false">Off</button>
+        </div>
+        <div id="dropProgressiveOpts">
+          <div class="row">
+            <span>Every</span>
+            <div class="mini-stepper"><button id="dropEveryDown" aria-label="Fewer bars">−</button><output id="dropEveryVal2">4</output><button id="dropEveryUp" aria-label="More bars">+</button></div>
+            <span>bars</span>
+          </div>
+          <label class="slider-row"><span>Up to <b id="dropMaxVal">75%</b></span>
+            <input type="range" class="slider" id="dropMax" min="10" max="95" step="5"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Push / pull</h3>
+        <p class="hint">Move the groove ahead of or behind the click (the click never moves). Turn on the click under grooves to hear the difference, then play along with the groove's feel.</p>
+        <label class="slider-row wide"><span>Whole groove <b id="feelOffsetVal">on the grid</b></span>
+          <input type="range" class="slider" id="feelOffset" min="-50" max="50" step="1"></label>
+        <div class="scale-labels"><span>◀ pushing (ahead)</span><span>laid back (behind) ▶</span></div>
+        <details class="drum-offsets">
+          <summary>Per-drum timing</summary>
+          <div id="drumOffsets"></div>
+        </details>
+        <div class="btn-row" id="feelPresets"></div>
+      </div>
+
+      <div class="card">
+        <h3>Humanize</h3>
+        <p class="hint">Small random timing and volume changes on every hit, like a real player. Clicks stay perfect.</p>
+        <label class="slider-row"><span>Amount <b id="humanizeVal">0%</b></span>
+          <input type="range" class="slider" id="humanize" min="0" max="100" step="5"></label>
+      </div>
+    </section>
+
     <!-- Trainer -->
     <section class="panel" id="panel-trainer" role="tabpanel">
       <div class="card">
@@ -164,7 +235,7 @@
           <div class="stepper" data-key="gap.mute" data-min="1" data-max="32" data-label="Silent (bars)"></div>
         </div>
         <div class="row">
-          <span>Hide beat light while silent</span>
+          <span>Hide beat light while silent (gap and dropout)</span>
           <button class="toggle" id="gapHideToggle" aria-pressed="true">On</button>
         </div>
       </div>
