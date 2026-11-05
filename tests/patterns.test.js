@@ -13,7 +13,7 @@ globalThis.localStorage = new MemoryStorage();
 
 const P = await import('../js/patterns.js');
 const store = await import('../js/storage.js');
-const { GROOVES, grooveToPattern } = await import('../js/grooves.js');
+const { GROOVES, FAMILIES, grooveToPattern } = await import('../js/grooves.js');
 
 beforeEach(() => { globalThis.localStorage = new MemoryStorage(); });
 
@@ -21,18 +21,23 @@ test('every built-in groove parses to a valid pattern with the right length', ()
   const ids = new Set();
   for (const g of GROOVES) {
     for (const [voice, str] of Object.entries(g.tracks)) {
-      const len = P.parseTrack(str).length;
+      const len = P.parseTrack(str).length * (g.eighths ? 2 : 1);
       assert.equal(len % g.steps, 0, `${g.id}.${voice} length ${len} not a multiple of ${g.steps}`);
       assert.ok(P.KIT_IDS.includes(voice), `${g.id}: unknown voice ${voice}`);
     }
     const p = grooveToPattern(g);
+    assert.equal(p.stepsPerBar, g.steps, `${g.id}: ${g.steps} steps is not valid for ${g.meter || '4/4'}`);
+    // every track in a groove has the same number of bars
+    const lens = new Set(Object.values(g.tracks).map(t => P.parseTrack(t).length));
+    assert.equal(lens.size, 1, `${g.id}: tracks have different lengths ${[...lens]}`);
+    assert.ok(FAMILIES.includes(g.style), `${g.id}: unknown family ${g.style}`);
     for (const id of P.KIT_IDS) assert.equal(p.tracks[id].length, p.stepsPerBar * p.bars, `${g.id}.${id}`);
     assert.ok(g.desc && g.bpm >= 30 && g.bpm <= 300, g.id);
     assert.ok(!ids.has(g.id), 'duplicate id ' + g.id);
     ids.add(g.id);
   }
   const styles = new Set(GROOVES.map(g => g.style));
-  for (const s of ['Reggae', 'Funk', 'Soul', 'Fusion']) assert.ok(styles.has(s));
+  for (const s of FAMILIES) assert.ok(styles.has(s), 'no grooves in family ' + s);
 });
 
 test('linear groove really is linear', () => {
@@ -188,4 +193,53 @@ test('every kit voice has a label, short name, group and default volume', () => 
     assert.ok(!ids.has(v.id), 'duplicate ' + v.id);
     ids.add(v.id);
   }
+});
+
+test('eighth-note grooves expand to 16ths: son clave 3-2 lands on the right steps', () => {
+  const p = grooveToPattern(GROOVES.find(g => g.id === 'salsa-3-2'));
+  assert.equal(p.bars, 2);
+  const hits = p.tracks.clave.flatMap((v, i) => (v ? [i] : []));
+  // eighths 0,3,6 | 10,12 -> 16th steps 0,6,12 | 20,24
+  assert.deepEqual(hits, [0, 6, 12, 20, 24]);
+});
+
+test('time signatures: 3/4 and 7/8 grooves play with the right beats per bar', () => {
+  const waltz = P.toSequence(grooveToPattern(GROOVES.find(g => g.id === 'jazz-waltz')));
+  assert.deepEqual([waltz.beatsPerBar, waltz.spb], [3, 3]);
+  const seven = P.toSequence(grooveToPattern(GROOVES.find(g => g.id === 'fusion-7-8')));
+  assert.deepEqual([seven.beatsPerBar, seven.spb], [7, 2]);
+  const five = P.toSequence(grooveToPattern(GROOVES.find(g => g.id === 'funk-5-4')));
+  assert.deepEqual([five.beatsPerBar, five.spb], [5, 4]);
+});
+
+test('setMeter keeps notes in place and pads or cuts the bar', () => {
+  const p = P.blankPattern();
+  p.tracks.kick[0] = P.ACCENT;
+  p.tracks.snare[12] = P.HIT;   // beat 4
+  P.setBars(p, 2);
+  P.setMeter(p, '3/4');
+  assert.equal(p.stepsPerBar, 12);
+  assert.equal(p.tracks.kick.length, 24);
+  assert.equal(p.tracks.kick[12], P.ACCENT, 'bar 2 downbeat kept');
+  assert.ok(p.tracks.snare.every(v => v === 0), 'beat 4 does not exist in 3/4');
+  P.setMeter(p, '5/4');
+  assert.equal(p.stepsPerBar, 20);
+  assert.equal(p.tracks.kick[20], P.ACCENT);
+  // a triplet pattern moving to 7/8 (no triplet grid) becomes straight
+  const t = P.blankPattern();
+  P.setResolution(t, 12);
+  t.tracks.hh[3] = P.HIT; // beat 2 on the triplet grid
+  P.setMeter(t, '7/8');
+  assert.equal(t.stepsPerBar, 14);
+  assert.equal(t.tracks.hh[4], P.HIT, 'beat 2 = 16th step 4');
+  const back = P.normalizePattern(JSON.parse(P.exportPatterns([t])).patterns[0]);
+  assert.equal(back.meter, '7/8');
+  assert.deepEqual(back.tracks.hh, t.tracks.hh);
+});
+
+test('normalize rejects step counts that do not fit the meter', () => {
+  assert.equal(P.normalizePattern({ meter: '3/4', stepsPerBar: 16, tracks: {} }).stepsPerBar, 12);
+  assert.equal(P.normalizePattern({ meter: '3/4', stepsPerBar: 9, tracks: {} }).stepsPerBar, 9);
+  assert.equal(P.normalizePattern({ meter: '7/8', stepsPerBar: 12, tracks: {} }).stepsPerBar, 14);
+  assert.equal(P.normalizePattern({ meter: '9/4', tracks: {} }).meter, '4/4');
 });

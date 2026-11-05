@@ -83,7 +83,8 @@
 
     <!-- Grooves -->
     <section class="panel" id="panel-grooves" role="tabpanel">
-      <div class="seg wrap" id="styleFilter"></div>
+      <input type="search" id="grooveSearch" class="search" placeholder="Search grooves (e.g. clave, shuffle, 6/8, ghost)" aria-label="Search grooves" autocomplete="off">
+      <div class="seg wrap chips" id="styleFilter"></div>
       <div class="groove-list" id="grooveList"></div>
       <div class="card">
         <h3>Mixer</h3>
@@ -116,8 +117,11 @@
       </div>
       <div class="card">
         <div class="row wrap-row">
+          <div class="seg" id="meterSegB" role="group" aria-label="Time signature">
+            <button data-value="4/4">4/4</button><button data-value="3/4">3/4</button><button data-value="5/4">5/4</button><button data-value="7/8">7/8</button>
+          </div>
           <div class="seg" id="resSeg" role="group" aria-label="Grid">
-            <button data-value="16">16ths</button><button data-value="12">Triplets</button>
+            <button data-value="straight">16ths</button><button data-value="triplet">Triplets</button>
           </div>
           <div class="seg" id="barsSeg" role="group" aria-label="Bars">
             <button data-value="1">1 bar</button><button data-value="2">2</button><button data-value="3">3</button><button data-value="4">4</button>

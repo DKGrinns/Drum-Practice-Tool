@@ -16,7 +16,7 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Step 1 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–2 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
 Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
@@ -32,16 +32,26 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] Pattern format: exports leave out silent tracks; old (v1) files and saved settings still load (tested).
 - [ ] Step probability / flams: skipped for now (not cheap). Revisit later if wanted.
 
-### Step 2 — Groove library expansion
-Allow grooves with 2–4 bars, and consider 3/4 and 6/8 grooves (needs `beatsPerBar` in patterns).
-- [ ] **Latin:** son clave 3-2 and 2-3, rumba clave, cha-cha-chá, mambo, bolero, songo, Afro-Cuban 6/8 (bembé), merengue, cumbia, bachata, salsa (cascara on shell), Latin jazz.
-- [ ] **Brazilian:** samba (surdo, hand pattern on hats/snare), bossa nova (cross-stick pattern), partido alto, baião, maracatu, samba-funk, samba-reggae, frevo, ijexá.
-- [ ] **Caribbean/Jamaican:** ska, rocksteady, dancehall, reggaeton/dembow, soca, calypso, nyabinghi.
-- [ ] **African:** Afrobeat (Tony Allen-style), highlife, Afro-pop/amapiano.
-- [ ] **US:** go-go, New Orleans second line, Purdie shuffle, gospel chops groove, Motown, disco, hip-hop (boom bap, Dilla feel), neo-soul, jazz ride/swing, jazz waltz, brushes-style pattern, rock, blues shuffle, country train beat.
-- [ ] **Fusion/odd time:** 7/8 and 5/4 fusion grooves, displaced-backbeat grooves.
-- [ ] Group the library by genre family with a search box; keep "Open in Builder" working.
-- [ ] Keep the test that checks every groove parses with valid lengths and voices.
+### Step 2 — Groove library expansion ✅ (done)
+- [x] Patterns support 4/4, 3/4, 5/4 and 7/8 (`meter` field, `PATTERN_METERS` in patterns.js); the builder has a time-signature selector, and the grid splits rows on whole beats.
+- [x] Grooves can be written in eighth notes (`eighths: true`) for Latin grooves felt in 2, at their real tempo.
+- [x] 73 grooves in 13 families:
+  - **Reggae:** one drop (2 versions), rockers, steppers, three reggae hi-hat variations, rocksteady, ska, nyabinghi
+  - **Caribbean:** dancehall, reggaeton/dembow, soca, calypso
+  - **Funk:** 16th funk with ghosts, syncopated kick, half-time, go-go, New Orleans second line, horn-section 16th funk
+  - **Soul & R&B:** soul backbeat, soul shuffle, Motown, disco, 12/8 soul ballad, neo-soul, gospel shuffle
+  - **Jazz:** medium and up-tempo swing, jazz waltz (3/4), ballad
+  - **Fusion:** half-time shuffle, linear, reggae/funk hybrid, ride funk-fusion, paradiddle groove, displaced backbeat, 7/8, 5/4 funk
+  - **Afro-Cuban:** salsa/son 3-2 and 2-3, rumba clave, cha-cha-chá, mambo, bolero, songo, 6/8 bembé
+  - **Latin:** merengue, cumbia, bachata, Latin rock
+  - **Brazilian:** samba, batucada, bossa nova, partido alto, baião, maracatu, samba-funk, samba-reggae, frevo
+  - **African:** afrobeat, highlife, amapiano feel
+  - **Hip-hop:** boom bap, Dilla-style swing, trap, classic breakbeat
+  - **Rock & Pop:** rock beat, Bo Diddley
+  - **Blues & Country:** blues shuffle, slow blues, Texas shuffle, train beat
+- [x] Grooves panel: genre chips with counts, a search box, and section headings.
+- [x] Tests: every groove's length, voices, meter and family are checked; son clave positions, 3/4 / 5/4 / 7/8 playback and `setMeter` are tested.
+- [ ] Still to add later: ijexá, Mozambique, cáscara/mambo-bell variations, highlife/Afrobeat bell variations, more Rock & Pop (half-time, pop ballad). Several Latin/Brazilian patterns are marked "Kit Adaptation"; the user may want to refine them by ear.
 
 ### Step 3 — Time-feel trainers (section 2)
 - [ ] Click modes: every beat, on the "&"s only, 2 and 4 only, beat 1 only, one click every N bars.
@@ -97,7 +107,7 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 2, groove library expansion.** All 17 voices can be used in `js/grooves.js` (ids: ride, oh, hh, rim, snare, kick, tom1, tom2, tom3, cowbell, agogoH, agogoL, clave, shaker, tamb, congaH, congaL). The grooves panel filter is currently a flat style list (`STYLES` in grooves.js); with many more grooves it needs genre families and a search box.
+- Next up: **Step 3, time-feel trainers.** The sequencer is in `js/sequencer.js` (pure and tested in `tests/sequencer.test.js`). Click modes and dropout can be done in the engine's `extraClick` / metronome pattern; push/pull and microtiming need a per-voice time offset applied in `Engine.handleStep` (offsets must stay inside the 120 ms lookahead, or be scheduled with a delay).
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.

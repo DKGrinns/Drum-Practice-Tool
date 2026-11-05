@@ -4,7 +4,9 @@
 // A pattern (as saved / exported) looks like:
 //   {
 //     id: 'p_abc123', name: 'My groove',
-//     stepsPerBar: 16 | 12,      // 16 = 16th notes, 12 = 8th-note triplets
+//     meter: '4/4' | '3/4' | '5/4' | '7/8',   // optional, default 4/4
+//     stepsPerBar: 16 | 12,      // in 4/4: 16 = 16th notes, 12 = 8th-note triplets
+//                                // (see PATTERN_METERS for the other meters)
 //     bars: 1..4,
 //     bpm: 90,                   // suggested tempo
 //     swing: 0..1, swingRes: 8 | 16,
@@ -85,9 +87,28 @@ export function emptyTracks(len) {
   return tracks;
 }
 
+// ---------------------------------------------------------------------------
+// Pattern time signatures.
+//   beats     beats per bar (what the BPM counts)
+//   straight  steps per bar on the straight grid (16ths; 7/8 counts eighths
+//             as beats, so its straight grid is 2 steps per beat)
+//   triplet   steps per bar on the triplet grid (null = not offered)
+// Older patterns have no meter and are 4/4.
+export const PATTERN_METERS = {
+  '4/4': { beats: 4, straight: 16, triplet: 12 },
+  '3/4': { beats: 3, straight: 12, triplet: 9 },
+  '5/4': { beats: 5, straight: 20, triplet: 15 },
+  '7/8': { beats: 7, straight: 14, triplet: null },
+};
+
+export const meterOf = p => PATTERN_METERS[p.meter] || PATTERN_METERS['4/4'];
+export const beatsOf = p => meterOf(p).beats;
+export const stepsPerBeat = p => p.stepsPerBar / beatsOf(p);
+export const isTriplet = p => stepsPerBeat(p) === 3;
+
 export function blankPattern(name = 'New pattern') {
   return {
-    id: newId(), name, stepsPerBar: 16, bars: 1, bpm: 90, swing: 0, swingRes: 16,
+    id: newId(), name, meter: '4/4', stepsPerBar: 16, bars: 1, bpm: 90, swing: 0, swingRes: 16,
     tracks: emptyTracks(16),
   };
 }
@@ -96,7 +117,9 @@ export function blankPattern(name = 'New pattern') {
 // library) into a clean, valid pattern. Throws if it is hopeless.
 export function normalizePattern(p) {
   if (!p || typeof p !== 'object') throw new Error('Not a pattern object');
-  const stepsPerBar = Number(p.stepsPerBar) === 12 ? 12 : 16;
+  const meter = PATTERN_METERS[p.meter] ? p.meter : '4/4';
+  const m = PATTERN_METERS[meter];
+  const stepsPerBar = Number(p.stepsPerBar) === m.triplet ? m.triplet : m.straight;
   const bars = clamp(Math.round(Number(p.bars) || 1), 1, MAX_BARS);
   const len = stepsPerBar * bars;
   const tracks = {};
@@ -116,7 +139,7 @@ export function normalizePattern(p) {
   return {
     id: typeof p.id === 'string' && p.id ? p.id : newId(),
     name: String(p.name || 'Untitled').slice(0, 60),
-    stepsPerBar, bars,
+    meter, stepsPerBar, bars,
     bpm: clamp(Math.round(Number(p.bpm) || 90), 30, 300),
     swing: clamp(Number(p.swing) || 0, 0, 1),
     swingRes: Number(p.swingRes) === 8 ? 8 : 16,
@@ -144,25 +167,48 @@ export function setBars(p, bars) {
   return p;
 }
 
-// Convert between 16 and 12 steps per bar. Each note moves to the nearest
-// step on the new grid (by time position); collisions keep the stronger hit.
+// Switch between the straight and triplet grid of the pattern's meter.
+// Each note moves to the nearest step on the new grid (by time position);
+// collisions keep the stronger hit.
+const RANK = [0, 2, 3, 1]; // strength order: off < ghost < hit < accent
 export function setResolution(p, stepsPerBar) {
   if (stepsPerBar === p.stepsPerBar) return p;
-  const oldSpb = p.stepsPerBar / 4, newSpb = stepsPerBar / 4;
+  const beats = beatsOf(p);
+  const oldSpb = p.stepsPerBar / beats, newSpb = stepsPerBar / beats;
   const newLen = stepsPerBar * p.bars;
-  const rank = [0, 2, 3, 1]; // strength order: off < ghost < hit < accent
   for (const id of KIT_IDS) {
     const old = p.tracks[id];
     const arr = new Array(newLen).fill(OFF);
     old.forEach((v, i) => {
       if (!v) return;
-      const beats = i / oldSpb;
-      const j = Math.round(beats * newSpb) % newLen;
-      if (rank[v] > rank[arr[j]]) arr[j] = v;
+      const j = Math.round((i / oldSpb) * newSpb) % newLen;
+      if (RANK[v] > RANK[arr[j]]) arr[j] = v;
     });
     p.tracks[id] = arr;
   }
   p.stepsPerBar = stepsPerBar;
+  return p;
+}
+
+// Change time signature. Notes keep their position from the start of each
+// bar (a 16th stays a 16th); bars get longer (padded with rests) or shorter
+// (cut). A triplet grid switches to straight first if the new meter has none.
+export function setMeter(p, meter) {
+  if (!PATTERN_METERS[meter] || meter === (p.meter || '4/4')) return p;
+  const target = PATTERN_METERS[meter];
+  if (isTriplet(p) && !target.triplet) setResolution(p, meterOf(p).straight);
+  const newSteps = isTriplet(p) ? target.triplet : target.straight;
+  const oldSteps = p.stepsPerBar;
+  for (const id of KIT_IDS) {
+    const old = p.tracks[id];
+    const arr = new Array(newSteps * p.bars).fill(OFF);
+    for (let bar = 0; bar < p.bars; bar++) {
+      for (let i = 0; i < Math.min(oldSteps, newSteps); i++) arr[bar * newSteps + i] = old[bar * oldSteps + i];
+    }
+    p.tracks[id] = arr;
+  }
+  p.meter = meter;
+  p.stepsPerBar = newSteps;
   return p;
 }
 
@@ -171,7 +217,7 @@ export function setResolution(p, stepsPerBar) {
 // is copied: setBars/setResolution swap in new arrays, and the old sequence
 // must keep its old arrays until the engine switches at the next bar line.
 export function toSequence(p) {
-  return { spb: p.stepsPerBar / 4, beatsPerBar: 4, bars: p.bars, tracks: { ...p.tracks } };
+  return { spb: stepsPerBeat(p), beatsPerBar: beatsOf(p), bars: p.bars, tracks: { ...p.tracks } };
 }
 
 // ---------------------------------------------------------------------------

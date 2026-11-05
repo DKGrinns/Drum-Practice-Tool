@@ -5,8 +5,8 @@ import { $, S, saveSettings, engine, registerSource, refreshSequence } from './c
 import { setSeg, segHandler } from './widgets.js';
 import { applyFeel, togglePlay } from './transport.js';
 import { openInBuilder } from './builder.js';
-import { GROOVES, STYLES, grooveToPattern } from '../grooves.js';
-import { toSequence } from '../patterns.js';
+import { GROOVES, FAMILIES, grooveToPattern } from '../grooves.js';
+import { toSequence, PATTERN_METERS } from '../patterns.js';
 
 export const currentGroove = () => GROOVES.find(g => g.id === S.grooveId) || GROOVES[0];
 
@@ -21,35 +21,71 @@ registerSource('groove', {
 });
 export const panel = { id: 'grooves', label: 'Grooves', source: 'groove' };
 
+let query = '';
+
+// Text searched by the search box: name, family, description and meter.
+const haystack = g => `${g.name} ${g.style} ${g.desc} ${g.meter || ''}`.toLowerCase();
+
+function gridLabel(g) {
+  const m = PATTERN_METERS[g.meter || '4/4'];
+  const triplet = g.steps === m.triplet;
+  return `${g.meter && g.meter !== '4/4' ? g.meter + ' · ' : ''}${triplet ? 'triplet' : '16th'} grid`;
+}
+
+function card(g) {
+  const el = document.createElement('div');
+  el.className = 'groove' + (g.id === S.grooveId ? ' selected' : '');
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
+  el.dataset.id = g.id;
+  el.innerHTML = `
+    <div class="g-head"><span class="g-name"></span><span class="g-meta">${g.bpm} BPM · ${gridLabel(g)}</span></div>
+    <div class="g-desc"><span class="g-style"></span><span class="d"></span></div>`;
+  el.querySelector('.g-name').textContent = g.name;
+  el.querySelector('.g-style').textContent = g.style;
+  el.querySelector('.d').textContent = g.desc;
+  if (g.id === S.grooveId) {
+    const actions = document.createElement('div');
+    actions.className = 'groove-actions';
+    actions.innerHTML = `<button data-act="play">▶ Play</button><button data-act="edit">Open in Builder</button>`;
+    el.appendChild(actions);
+  }
+  return el;
+}
+
 export function renderGrooves() {
+  if (S.styleFilter !== 'All' && !FAMILIES.includes(S.styleFilter)) S.styleFilter = 'All';
   const filter = $('styleFilter');
   if (!filter.children.length) {
-    filter.innerHTML = ['All', ...STYLES].map(s => `<button data-value="${s}">${s}</button>`).join('');
+    filter.innerHTML = ['All', ...FAMILIES].map(f => {
+      const n = f === 'All' ? GROOVES.length : GROOVES.filter(g => g.style === f).length;
+      return `<button data-value="${f}">${f} <span class="count">${n}</span></button>`;
+    }).join('');
   }
   setSeg(filter, S.styleFilter);
+  const q = query.trim().toLowerCase();
+  const shown = GROOVES.filter(g => (S.styleFilter === 'All' || g.style === S.styleFilter) && (!q || q.split(/\s+/).every(w => haystack(g).includes(w))));
   const list = $('grooveList');
   list.innerHTML = '';
-  for (const g of GROOVES) {
-    if (S.styleFilter !== 'All' && g.style !== S.styleFilter) continue;
-    const card = document.createElement('div');
-    card.className = 'groove' + (g.id === S.grooveId ? ' selected' : '');
-    card.tabIndex = 0;
-    card.setAttribute('role', 'button');
-    card.dataset.id = g.id;
-    card.innerHTML = `
-      <div class="g-head"><span class="g-name"></span><span class="g-meta">${g.bpm} BPM · ${g.steps === 12 ? 'triplet' : '16th'} grid</span></div>
-      <div class="g-desc"><span class="g-style">${g.style}</span><span class="d"></span></div>`;
-    card.querySelector('.g-name').textContent = g.name;
-    card.querySelector('.d').textContent = g.desc;
-    if (g.id === S.grooveId) {
-      const actions = document.createElement('div');
-      actions.className = 'groove-actions';
-      actions.innerHTML = `<button data-act="play">▶ Play</button><button data-act="edit">Open in Builder</button>`;
-      card.appendChild(actions);
+  if (!shown.length) {
+    list.innerHTML = '<p class="hint">No grooves match. Try another word or pick "All".</p>';
+    return;
+  }
+  // Group by family, in family order.
+  for (const fam of FAMILIES) {
+    const group = shown.filter(g => g.style === fam);
+    if (!group.length) continue;
+    if (S.styleFilter === 'All') {
+      const h = document.createElement('h3');
+      h.className = 'g-family';
+      h.textContent = `${fam} (${group.length})`;
+      list.appendChild(h);
     }
-    list.appendChild(card);
+    for (const g of group) list.appendChild(card(g));
   }
 }
+
+$('grooveSearch').addEventListener('input', e => { query = e.target.value; renderGrooves(); });
 
 function selectGroove(id) {
   S.grooveId = id;

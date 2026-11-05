@@ -10,7 +10,8 @@ import { setSeg, segHandler, toast, ask, download, slug } from './widgets.js';
 import { applyFeel } from './transport.js';
 import { VELOCITY } from '../sequencer.js';
 import {
-  KIT_VOICES, toSequence, blankPattern, clonePattern, normalizePattern, setBars, setResolution,
+  KIT_VOICES, PATTERN_METERS, meterOf, beatsOf, stepsPerBeat, isTriplet, toSequence, blankPattern,
+  clonePattern, normalizePattern, setBars, setResolution, setMeter,
   PatternLibrary, exportPatterns, importPatterns, newId,
 } from '../patterns.js';
 
@@ -60,7 +61,9 @@ export function renderBuilder() {
   sorted.forEach((p, i) => { sel.options[i + 1].textContent = p.name; });
   sel.value = saved ? draft.id : '';
   $('pDelete').disabled = !saved;
-  setSeg($('resSeg'), String(draft.stepsPerBar));
+  setSeg($('meterSegB'), draft.meter);
+  $('resSeg').querySelector('[data-value="triplet"]').disabled = !meterOf(draft).triplet;
+  setSeg($('resSeg'), isTriplet(draft) ? 'triplet' : 'straight');
   setSeg($('barsSeg'), String(draft.bars));
   $('allDrums').setAttribute('aria-pressed', String(S.builderAllDrums));
   renderGrid();
@@ -76,47 +79,66 @@ function visibleVoices() {
   return KIT_VOICES.filter(v => v.group === 'kit' || S.builderAllDrums || draft.tracks[v.id].some(x => x));
 }
 
-// The grid is split into blocks that fit the screen width without
-// horizontal scrolling: whole pattern, one bar, half a bar or one beat per
-// row, whichever is the largest that keeps cells finger-sized.
+// Grid layout: the whole pattern on one row if it fits, else one bar per
+// block, and if a bar is too wide for the screen it is split into rows of
+// whole beats. Cells stay at least 32px wide (finger-sized) and the page
+// never scrolls sideways.
 let colCells = [];
-let lastChunk = 0;
-function chooseChunk() {
+let lastLayout = '';
+function layout() {
   const width = $('grid').clientWidth || window.innerWidth - 60;
   const labelW = width < 500 ? 52 : 100;
-  const spb = draft.stepsPerBar / 4;
+  const fit = Math.max(1, Math.floor((width - labelW) / 32)); // cells per row
+  const spb = stepsPerBeat(draft);
+  const beats = beatsOf(draft);
   const total = draft.stepsPerBar * draft.bars;
-  const options = [total, draft.stepsPerBar, draft.stepsPerBar / 2, spb];
-  const chunk = options.find(c => (width - labelW) / c >= 32) || spb;
-  return { chunk, labelW };
+  let cols, segments = [];
+  if (total <= fit) {
+    cols = total;
+    segments = [[0, total]];
+  } else {
+    // Beats per row: as many as fit, spread evenly over the rows.
+    const maxBeats = Math.max(1, Math.min(beats, Math.floor(fit / spb)));
+    const rows = Math.ceil(beats / maxBeats);
+    const rowBeats = Math.ceil(beats / rows);
+    cols = rowBeats * spb;
+    for (let bar = 0; bar < draft.bars; bar++) {
+      for (let b = 0; b < beats; b += rowBeats) {
+        const start = bar * draft.stepsPerBar + b * spb;
+        segments.push([start, Math.min(rowBeats, beats - b) * spb]);
+      }
+    }
+  }
+  return { cols, segments, labelW, key: `${cols}:${labelW}:${total}` };
 }
 
 export function renderGrid() {
   const grid = $('grid');
   if (!grid.offsetParent && grid.children.length) return; // hidden; render on show
-  const { chunk, labelW } = chooseChunk();
-  lastChunk = chunk;
+  const { cols, segments, labelW, key } = layout();
+  lastLayout = key;
   const narrow = labelW < 60;
-  const spb = draft.stepsPerBar / 4;
+  const spb = stepsPerBeat(draft);
+  const beats = beatsOf(draft);
   const total = draft.stepsPerBar * draft.bars;
-  const subLabels = spb === 4 ? ['', 'e', '&', 'a'] : ['', 'tri', 'let'];
+  const subLabels = spb === 4 ? ['', 'e', '&', 'a'] : spb === 3 ? ['', 'tri', 'let'] : ['', '&'];
   const voices = visibleVoices();
   colCells = Array.from({ length: total }, () => []);
   const frag = document.createDocumentFragment();
-  for (let start = 0; start < total; start += chunk) {
+  for (const [start, len] of segments) {
     const block = document.createElement('div');
     block.className = 'grid-block';
-    block.style.gridTemplateColumns = `${labelW}px repeat(${chunk}, minmax(0, 1fr))`;
+    block.style.gridTemplateColumns = `${labelW}px repeat(${cols}, minmax(0, 1fr))`;
     const bar = Math.floor(start / draft.stepsPerBar);
     const corner = document.createElement('div');
     corner.className = 'grid-head bar';
     corner.textContent = start % draft.stepsPerBar === 0 ? `Bar ${bar + 1}` : '';
     block.appendChild(corner);
-    for (let i = start; i < start + chunk; i++) {
+    for (let i = start; i < start + len; i++) {
       const h = document.createElement('div');
       const pos = i % spb;
       h.className = 'grid-head' + (pos === 0 ? ' beat' : '');
-      h.textContent = pos === 0 ? (Math.floor(i / spb) % 4) + 1 : subLabels[pos];
+      h.textContent = pos === 0 ? (Math.floor(i / spb) % beats) + 1 : subLabels[pos];
       block.appendChild(h);
       colCells[i].push(h);
     }
@@ -124,11 +146,12 @@ export function renderGrid() {
       const firstPerc = v.group !== 'kit' && (row === 0 || voices[row - 1].group === 'kit');
       const label = document.createElement('div');
       label.className = 'grid-label' + (firstPerc ? ' sep' : '');
+      label.style.gridColumn = '1'; // always starts a new row, even if the last row was short
       label.dataset.voice = v.id;
       label.textContent = narrow ? v.short : v.label;
       label.title = v.label;
       block.appendChild(label);
-      for (let i = start; i < start + chunk; i++) {
+      for (let i = start; i < start + len; i++) {
         const c = document.createElement('button');
         c.className = `cell v${draft.tracks[v.id][i]}` + (i % spb === 0 ? ' beat-start' : '') + (firstPerc ? ' sep' : '');
         c.dataset.voice = v.id;
@@ -176,7 +199,7 @@ bus.on('stop', () => setPlayhead(-1));
 let resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { if (S.tab === 'builder' && chooseChunk().chunk !== lastChunk) renderGrid(); }, 150);
+  resizeTimer = setTimeout(() => { if (S.tab === 'builder' && layout().key !== lastLayout) renderGrid(); }, 150);
 });
 
 $('allDrums').addEventListener('click', () => {
@@ -192,7 +215,12 @@ function structureChanged() {
   markDirty();
   renderBuilder();
 }
-segHandler($('resSeg'), v => { setResolution(draft, Number(v)); structureChanged(); });
+segHandler($('resSeg'), v => {
+  const m = meterOf(draft);
+  setResolution(draft, v === 'triplet' ? m.triplet : m.straight);
+  structureChanged();
+});
+segHandler($('meterSegB'), v => { setMeter(draft, v); structureChanged(); });
 segHandler($('barsSeg'), v => { setBars(draft, Number(v)); structureChanged(); });
 $('pClear').addEventListener('click', async () => {
   if (!(await ask('Clear every note in this pattern?'))) return;

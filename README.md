@@ -1,6 +1,6 @@
 # Groove Trainer
 
-A drum practice app for reggae, funk, soul and fusion players. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of loopable grooves and a step-sequencer pattern builder. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
+A drum practice app built around reggae, funk, soul and fusion, with grooves from many more styles. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of 73 loopable grooves and a step-sequencer pattern builder. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
 
 **Live app:** https://dkgrinns.github.io/Drum-Practice-Tool/
 
@@ -26,8 +26,10 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
 
 - **Metronome:** choose 4/4, 3/4, 5/4, 6/8, 12/8 or 7/8, and quarters, 8ths, triplets or 16ths. You can turn the beat-1 accent on or off, and the click and the subdivision click have separate volumes. In 6/8 and 12/8 the BPM counts the dotted quarter (12/8 = four big beats). In 7/8 it counts eighth notes, grouped 2+2+3.
 - **Swing:** goes from straight (0%) to a full triplet shuffle (100%), on 8th-note or 16th-note pairs. Triplet grids are already swung, so swing has no effect on them and the slider dims.
-- **Grooves:** tap a groove to load it with its own tempo and swing, then press PLAY. Tap it again to restore its default tempo. The mixer lets you mute or turn down any drum, for example mute the kick and play it yourself. Toms and percussion are under **Toms & percussion** in the mixer. The **Click** channel adds a metronome click on top of the groove. **Open in Builder** copies the groove into the pattern builder.
-- **Builder:** a grid of 16ths or triplets, 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. The grid shows the core kit plus any toms or percussion the pattern uses; press **All drums** to show every row (toms, cowbell, agogô, clave, shaker, tambourine, congas). You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
+- **Grooves:** 73 grooves in 13 genre families: Reggae, Caribbean, Funk, Soul & R&B, Jazz, Fusion, Afro-Cuban, Latin, Brazilian, African, Hip-hop, Rock & Pop, and Blues & Country. Use the genre chips or the search box (try "clave", "shuffle", "6/8" or "ghost"). Tap a groove to load it with its own tempo and swing, then press PLAY. Tap it again to restore its default tempo. The mixer lets you mute or turn down any drum, for example mute the kick and play it yourself. Toms and percussion are under **Toms & percussion** in the mixer. The **Click** channel adds a metronome click on top of the groove. **Open in Builder** copies the groove into the pattern builder.
+  - Grooves "felt in 2", like salsa, mambo and rumba, use their real tempo (e.g. salsa at 180). The 7/8 groove counts eighth notes as beats.
+  - Grooves marked "Kit Adaptation" are simplified versions of percussion-ensemble rhythms. Use them as a starting point, and adjust them in the builder to match the records you're playing along to.
+- **Builder:** a grid in 4/4, 3/4, 5/4 or 7/8, with 16ths or triplets (7/8 is 16ths only), 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. The grid shows the core kit plus any toms or percussion the pattern uses; press **All drums** to show every row (toms, cowbell, agogô, clave, shaker, tambourine, congas). You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
@@ -42,10 +44,12 @@ Grooves live in [`js/grooves.js`](js/grooves.js). Add an object to the `GROOVES`
 ```js
 {
   id: 'my-groove',            // unique, no spaces
-  style: 'Funk',              // Reggae | Funk | Soul | Fusion (filter chips)
+  style: 'Funk',              // genre family: one of FAMILIES at the bottom of grooves.js
   name: 'My Groove',
   bpm: 95,                    // default tempo
   steps: 16,                  // 16 = 16th grid, 12 = triplet grid (per bar of 4/4)
+  // meter: '3/4',            // optional: 3/4 (12 or 9 steps), 5/4 (20 or 15), 7/8 (14)
+  // eighths: true,           // optional: each character is an eighth note
   swing: 0.2, swingRes: 16,   // optional default swing (0..1) on 8ths or 16ths
   desc: 'One sentence about the feel.',
   tracks: {                   // any of: ride, oh, hh, rim, snare, kick, tom1, tom2, tom3,

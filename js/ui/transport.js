@@ -4,7 +4,7 @@
 import { $, clamp, S, saveSettings, engine, bus, refreshSequence, getActiveSeq, describeSource } from './core.js';
 import { setSeg, segHandler, holdRepeat } from './widgets.js';
 import { trainerBpm } from '../sequencer.js';
-import { METERS } from '../patterns.js';
+import { METERS, isTriplet } from '../patterns.js';
 
 const trainerOn = () => S.trainer.enabled;
 let liveBpm = null; // tempo reported by the engine while playing
@@ -85,7 +85,7 @@ segHandler($('swingRes'), v => { S.swingRes = Number(v); renderSwing(); saveSett
 export function applyFeel(p) {
   if (!trainerOn()) S.bpm = p.bpm;
   S.swing = p.swing;
-  if (p.stepsPerBar === 16) S.swingRes = p.swingRes;
+  if (!isTriplet(p)) S.swingRes = p.swingRes;
   renderBpm();
   renderSwing();
   saveSettings();
