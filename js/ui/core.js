@@ -29,6 +29,8 @@ export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const mixDefaults = {};
 for (const v of KIT_VOICES) mixDefaults[v.id] = { vol: v.vol, mute: false };
 mixDefaults.grooveClick = { vol: 0.6, mute: true };
+mixDefaults.bass = { vol: 0.8, mute: false };   // backing band
+mixDefaults.keys = { vol: 0.6, mute: false };
 
 const DEFAULTS = {
   bpm: 100, swing: 0, swingRes: 8,
@@ -43,6 +45,10 @@ const DEFAULTS = {
   // Timing feedback: input ('mic' | 'midi'), mic sensitivity, grid (points
   // per beat) and whether to record takes.
   feedback: { input: 'mic', sensitivity: 60, res: 4, record: false },
+  // Backing band: key (pitch class name), progression ('auto' = the style's
+  // own, a preset, or 'custom' -> customProgression), style ('auto' = from
+  // the groove).
+  band: { enabled: false, key: 'A', progression: 'auto', customProgression: 'i iv i v', style: 'auto' },
   mix: mixDefaults,
   master: 0.9, wakeLock: true,
   tab: 'metronome', source: 'metronome', grooveId: GROOVES[0].id, styleFilter: 'All',
@@ -111,7 +117,12 @@ export const engine = new Engine({
   // following the click mode of the time-feel trainer.
   clickFor: ev => (S.source !== 'metronome' && getLevel('grooveClick') > 0 ? clickLayer(S.clickMode, ev, S.sparseBars) : null),
   getFeel: () => S.feel,
+  band: ev => (bandProvider ? bandProvider(ev) : null),
 });
+
+// The Band tab supplies the band's notes per step (set by js/ui/band.js).
+let bandProvider = null;
+export function setBandProvider(fn) { bandProvider = fn; }
 engine.setMasterVolume(S.master);
 
 // =================================================================== sources

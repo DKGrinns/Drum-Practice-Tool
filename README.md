@@ -4,7 +4,7 @@ A drum practice app built around reggae, funk, soul and fusion, with grooves fro
 
 **Live app:** https://dkgrinns.github.io/Drum-Practice-Tool/
 
-All the sounds (kick, snare, cross-stick, hi-hats, ride, three toms, cowbell, agogô bells, clave, shaker, tambourine, congas and the clicks) are synthesized with the Web Audio API, so nothing is downloaded. Your settings and patterns are saved in the browser on your device.
+All the sounds (kick, snare, cross-stick, hi-hats, ride, three toms, cowbell, agogô bells, clave, shaker, tambourine, congas, the clicks, and the backing band's bass, guitar skank, clav, organ and electric piano) are synthesized with the Web Audio API, so nothing is downloaded. Your settings and patterns are saved in the browser on your device.
 
 ## Install it as an app
 
@@ -30,6 +30,11 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   - Grooves "felt in 2", like salsa, mambo and rumba, use their real tempo (e.g. salsa at 180). The 7/8 groove counts eighth notes as beats.
   - Grooves marked "Kit Adaptation" are simplified versions of percussion-ensemble rhythms. Use them as a starting point, and adjust them in the builder to match the records you're playing along to.
 - **Builder:** a grid in 4/4, 3/4, 5/4 or 7/8, with 16ths or triplets (7/8 is 16ths only), 1 to 4 bars long. Tap a cell to step through off → hit → accent → ghost → off, and tap a drum name to hear it. The grid shows the core kit plus any toms or percussion the pattern uses; press **All drums** to show every row (toms, cowbell, agogô, clave, shaker, tambourine, congas). You can edit while it plays. **Save** stores the pattern along with the current tempo and swing. Use **Rename**, **Duplicate** and **Delete** to manage patterns, and **Export** / **Export all** / **Import** to back them up as JSON files.
+- **Band** (backing band): turn it on and a synthesized bass and chord instrument play along with any groove or pattern (not the plain metronome). They follow the tempo, swing, push/pull feel, tempo trainer, gap trainer and dropout.
+  - *Key:* any of the 12 keys.
+  - *Chords:* the style's own chords, a preset (one-chord vamps, i–iv, i–♭VII, I–IV–V, I–vi–IV–V, ii–V–I, 12-bar blues and more), or your own, written as numbers in the key with one chord per bar. For example `i iv i v` or `ii7 V7 Imaj7 Imaj7`: upper case = major, lower case = minor, add `7` or `maj7`, and write ♭ as `b` (`bVII`).
+  - *Style:* matches the groove automatically, or pick one: reggae one drop (skank on 2 and 4), rockers/steppers, ska (off-beat skank), dancehall/soca, funk (clav stabs), soul (electric piano), blues/shuffle (organ, boogie bass), jazz (walking bass and comping), bossa nova, samba, salsa (tumbao bass and montuno), afrobeat/highlife, rock/pop. Odd meters get a simple part.
+  - The current and next chord are shown under the tempo. **Band: bass** and **Band: chords** have their own mixer channels.
 - **Feel** (time-feel trainers):
   - *Click:* thin the click out so you have to supply the missing beats. Choose every beat, 2 & 4 only, the "&"s only, beat 1 only, or one click every N bars. This works with the metronome and, when **Click under grooves & patterns** is on, under any groove.
   - *Click dropout:* random beats go completely silent, both the click and the groove. Keep playing through them. You can always keep beat 1, and **Get harder** adds 10% more silent beats every few bars, up to a limit you set.
@@ -95,11 +100,12 @@ npm test                        # timing, patterns, feel, onset detection and sc
 | `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
 | `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
 | `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
-| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `feel.js`, `feedback.js`, `trainer.js` | One module per tab |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `band.js`, `feel.js`, `feedback.js`, `trainer.js` | One module per tab |
 | `js/ui/mixer.js`, `widgets.js`, `keyboard.js` | Mixer, shared UI helpers, desktop shortcuts |
 | `js/engine.js` | AudioContext and the lookahead scheduler loop |
 | `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer, click dropout, click modes |
 | `js/feel.js` | Push/pull offsets, per-drum microtiming, humanize (pure functions) |
+| `js/band.js` | Backing band: chord numerals, progressions, band styles (bass + chord rhythms), notes per step (pure) |
 | `js/onset-worklet.js` | Drum-hit (onset) detector; runs as an AudioWorklet, also importable for tests |
 | `js/timing-analysis.js` | Scoring: grid, hit matching, summaries, latency estimation, speaker-bleed filter (pure) |
 | `js/mic.js` | Microphone input (no echo cancellation/noise suppression/auto gain) feeding the detector; raw audio for recording |

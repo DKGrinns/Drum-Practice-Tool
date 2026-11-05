@@ -42,10 +42,12 @@ export class Engine {
   //   step (the click layer under grooves).
   // getFeel() -> feel settings (see feel.js): push/pull, per-drum offsets,
   //   humanize.
-  constructor({ config, getLevel, clickFor, getFeel }) {
+  // band(event) -> band notes for this step (see band.js), or null.
+  constructor({ config, getLevel, clickFor, getFeel, band }) {
     this.ctx = null;
     this.getLevel = getLevel;
     this.clickFor = clickFor || (() => null);
+    this.band = band || (() => null);
     this.getFeel = getFeel || (() => null);
     this.visualQueue = [];
     // Logs for timing feedback: every beat played (the grid to score hits
@@ -136,6 +138,20 @@ export class Engine {
         t = Math.max(t, earliest);
         this.synth.play(h.voice, t, Math.min(1.2, vel));
         this.logSound(t);
+      }
+      // Backing band (bass + chords) on the same step grid.
+      const band = this.band(ev);
+      if (band) {
+        const stepDur = ev.beatDur / ev.spb;
+        for (const n of band) {
+          const level = this.getLevel(n.part);
+          if (level <= 0) continue;
+          const t = Math.max(ev.time + voiceOffset(feel, n.part), earliest);
+          const dur = n.steps * stepDur * 0.95;
+          if (n.part === 'bass') this.synth.bass(t, n.notes[0], dur, level, n.tone);
+          else this.synth.chord(t, n.notes, dur, level * (n.accent ? 1 : 0.85), n.sound);
+          this.logSound(t);
+        }
       }
       const click = this.clickFor(ev);
       if (click) {

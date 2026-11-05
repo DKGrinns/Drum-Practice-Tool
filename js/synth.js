@@ -321,6 +321,115 @@ export class DrumSynth {
     n.connect(bp).connect(ng).connect(this.out);
   }
 
+  // --- backing band ----------------------------------------------------------
+
+  // Bass note. tone: 'deep' (round, sub-heavy reggae bass), 'pluck' (bright
+  // attack, electric bass) or 'upright' (woody, quicker decay).
+  bass(t, midi, dur, v, tone = 'pluck') {
+    const ctx = this.ctx;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    const end = t + Math.max(0.06, dur);
+    const g = ctx.createGain();
+    const peak = v * (tone === 'deep' ? 0.7 : 0.55);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+    if (tone === 'upright') g.gain.exponentialRampToValueAtTime(peak * 0.3, t + 0.35);
+    else g.gain.setTargetAtTime(peak * 0.75, t + 0.02, 0.25);
+    g.gain.setTargetAtTime(0.0001, end, 0.03);
+    const lp = this.filter('lowpass', tone === 'deep' ? 420 : 900, tone === 'deep' ? 0.5 : 1.2);
+    if (tone !== 'deep') {
+      lp.frequency.setValueAtTime(tone === 'upright' ? 1400 : 2200, t);
+      lp.frequency.exponentialRampToValueAtTime(tone === 'upright' ? 500 : 700, t + 0.18);
+    }
+    const sub = ctx.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.value = f;
+    const body = ctx.createOscillator();
+    body.type = tone === 'upright' ? 'triangle' : 'sawtooth';
+    body.frequency.value = f;
+    const bodyGain = ctx.createGain();
+    bodyGain.gain.value = tone === 'deep' ? 0.25 : 0.6;
+    sub.connect(g);
+    body.connect(bodyGain).connect(lp).connect(g);
+    g.connect(this.out);
+    for (const o of [sub, body]) { o.start(t); o.stop(end + 0.2); }
+  }
+
+  // Chord. sound: 'skank' (short reggae guitar chop), 'stab' (funk clav /
+  // guitar chank), 'organ' (held drawbar organ), 'keys' (electric piano).
+  chord(t, notes, dur, v, sound = 'keys') {
+    const ctx = this.ctx;
+    const freq = m => 440 * Math.pow(2, (m - 69) / 12);
+    const n = notes.length;
+    const out = ctx.createGain();
+    out.connect(this.out);
+    if (sound === 'skank' || sound === 'stab') {
+      const short = sound === 'skank' ? 0.09 : 0.11;
+      const bp = this.filter('bandpass', sound === 'skank' ? 1500 : 2200, sound === 'skank' ? 0.9 : 1.6);
+      const hp = this.filter('highpass', 300);
+      const g = this.env(t, v * (sound === 'skank' ? 0.8 : 1.6), short, 0.002);
+      for (const m of notes) {
+        const o = ctx.createOscillator();
+        o.type = sound === 'skank' ? 'square' : 'sawtooth';
+        o.frequency.value = freq(m);
+        const og = ctx.createGain();
+        og.gain.value = 1 / n;
+        o.connect(og).connect(bp);
+        o.start(t);
+        o.stop(t + short + 0.05);
+      }
+      bp.connect(hp).connect(g).connect(out);
+      // pick / string scrape
+      const ns = this.noiseSource(t, 0.02);
+      const nf = this.filter('bandpass', 3000, 1);
+      const ng = this.env(t, v * 0.12, 0.015, 0.001);
+      ns.connect(nf).connect(ng).connect(out);
+      return;
+    }
+    const end = t + Math.max(0.08, dur);
+    if (sound === 'organ') {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v * 0.28, t + 0.012);
+      g.gain.setTargetAtTime(0.0001, end, 0.04);
+      g.connect(out);
+      for (const m of notes) {
+        for (const [mul, amp] of [[1, 1], [2, 0.5], [3, 0.25], [4, 0.15]]) {
+          const o = ctx.createOscillator();
+          o.type = 'sine';
+          o.frequency.value = freq(m) * mul;
+          const og = ctx.createGain();
+          og.gain.value = amp / n;
+          o.connect(og).connect(g);
+          o.start(t);
+          o.stop(end + 0.3);
+        }
+      }
+      return;
+    }
+    // Electric piano: sine with a decaying FM "tine" for the bell-like attack.
+    for (const m of notes) {
+      const f = freq(m);
+      const car = ctx.createOscillator();
+      car.type = 'sine';
+      car.frequency.value = f;
+      const mod = ctx.createOscillator();
+      mod.type = 'sine';
+      mod.frequency.value = f * 1.0;
+      const modGain = ctx.createGain();
+      modGain.gain.setValueAtTime(f * 1.2, t);
+      modGain.gain.exponentialRampToValueAtTime(f * 0.05, t + 0.4);
+      mod.connect(modGain).connect(car.frequency);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v * 0.45 / n, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(v * 0.17 / n, t + 0.6);
+      g.gain.setTargetAtTime(0.0001, end, 0.06);
+      car.connect(g).connect(out);
+      for (const o of [car, mod]) { o.start(t); o.stop(end + 0.5); }
+    }
+  }
+
   click(t, v, freq, type) {
     const o = this.ctx.createOscillator();
     o.type = type;

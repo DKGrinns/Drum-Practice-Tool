@@ -16,7 +16,7 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Steps 1–5 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–6 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
 Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
@@ -80,11 +80,13 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] Tests: `tests/midi-recorder.test.js`. Browser test with a virtual e-kit gave exact per-drum offsets (kick +4, snare +18, ghosts −6 ms) and the right dynamics, the learn mapping worked, and the recorded take scored +12 ms as played; replay alignment checked; WAV download checked.
 - [ ] Needs real-world check: a real e-kit (Roland/Alesis/Yamaha) over USB, and the over-the-groove sync by ear.
 
-### Step 6 — Backing band (section 3)
-- [ ] Synthesized bass (sub sine/saw with filter envelope) and a chord instrument (reggae skank, funk stabs, soul organ/keys).
-- [ ] Bass and chord patterns stored with grooves, with a key/chord-progression setting (simple: key, plus a progression like I–IV or i–iv).
-- [ ] Band mixer channels, and band parts that follow tempo, swing, trainers and gap mutes.
-- [ ] Defaults for the main styles: one drop, rockers, steppers, funk, soul, bossa, samba, son.
+### Step 6 — Backing band (section 3) ✅ (done)
+- [x] Synthesized bass (deep / pluck / upright tones) and chord instruments (reggae skank, funk stab, organ, electric piano) in `js/synth.js`.
+- [x] `js/band.js`: Roman-numeral chords in any key, progression presets (incl. 12-bar blues) and custom progressions, 13 band styles with bass and chord rhythms for 16- and 12-step bars, a generic part for odd meters, approach notes into the next chord, chord voicings. Grooves get a matching style automatically (`styleForGroove`).
+- [x] The engine plays band notes from the same sequencer steps, so they follow tempo, swing, push/pull (bass with the kick, chords with the snare), the trainers, gap mutes and dropout. Mixer channels "Band: bass" and "Band: chords".
+- [x] Band tab (`js/ui/band.js`): on/off, key, chords, style; current and next chord shown under the tempo.
+- [x] Tests: `tests/band.test.js` (numerals, progressions, style strings, bass degrees and approach notes, voicings, one-drop skank on 2 and 4 with chord changes, odd meters, every groove gets a playable style). Browser test: skanks exactly on 2 and 4, a jazz walking line with approach notes over ii–V–I, no band notes in gap-trainer silent bars, and sound levels balanced against the drums.
+- [ ] Possible later: per-groove custom bass lines (e.g. classic one-drop riffs), more chord voicings and inversions, a bass-only "play along with the bass player" mode, minor-key styles for more genres.
 
 ### Step 7 — Practice structure (section 5)
 - [ ] Routine builder: a list of blocks (groove or metronome settings + duration + trainer settings), run in order with a timer and auto-advance.
@@ -112,7 +114,7 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 6, backing band.** Add bass and chord voices to `js/synth.js` (pitched, so they need a note/pitch argument), give grooves optional `bass` / `chords` parts (a new pattern field, not a drum track), and let the engine schedule them from the same sequencer steps so they follow tempo, swing, trainers, gap mutes and dropout. Add "Bass" and "Keys/Guitar" channels to the mixer.
+- Next up: **Step 7, practice structure.** The routine runner can drive the existing pieces: set `S.source` / `S.grooveId` / `S.bpm` / trainer settings, then `refreshSequence()` and `togglePlay()`. The take history from the Feedback tab (`localStorage grooveTrainer.takeHistory`) can feed the practice log. Use `bus.on('step')` to count bars and time.
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.

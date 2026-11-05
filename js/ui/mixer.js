@@ -16,6 +16,7 @@ function build(box) {
   const core = KIT_VOICES.filter(v => v.group === 'kit');
   const perc = KIT_VOICES.filter(v => v.group !== 'kit');
   box.innerHTML = core.map(row).join('') + row({ id: 'grooveClick', label: 'Click' }) +
+    row({ id: 'bass', label: 'Band: bass' }) + row({ id: 'keys', label: 'Band: chords' }) +
     `<details class="mix-more"><summary>Toms &amp; percussion</summary>${perc.map(row).join('')}</details>`;
 }
 

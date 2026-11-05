@@ -46,6 +46,7 @@
     </div>
 
     <div class="now-playing" id="nowPlaying">Metronome</div>
+    <div class="chord-now" id="chordNow" hidden></div>
 
     <div class="play-bar">
       <button class="tap-btn" id="tapBtn">TAP</button>
@@ -134,6 +135,33 @@
       </div>
       <div class="card">
         <h3>Mixer</h3>
+        <div class="mixer" data-mixer></div>
+      </div>
+    </section>
+
+    <!-- Band: backing band (js/ui/band.js) -->
+    <section class="panel" id="panel-band" role="tabpanel">
+      <div class="card">
+        <div class="row">
+          <h3>Backing band</h3>
+          <button class="toggle" id="bandToggle" aria-pressed="false">Off</button>
+        </div>
+        <p class="hint">Bass and chords play along with the groove or your pattern, following the tempo, swing, feel and trainers. (Not with the plain metronome.)</p>
+        <div class="band-chord" id="bandChord" aria-live="off"></div>
+      </div>
+      <div class="card">
+        <h3>Key</h3>
+        <div class="seg wrap chips" id="bandKey"></div>
+      </div>
+      <div class="card">
+        <label class="select-row"><span>Chords</span><select id="bandProgression"></select></label>
+        <label class="select-row" id="bandCustomRow"><span>Your chords</span>
+          <input type="text" id="bandCustom" class="search compact-input" placeholder="e.g. i iv i v  or  ii7 V7 Imaj7" autocomplete="off"></label>
+        <p class="hint">One chord per bar, as numbers in the key: upper case = major, lower case = minor, add 7 / maj7, ♭ as b (e.g. bVII).</p>
+        <label class="select-row"><span>Style</span><select id="bandStyle"></select></label>
+      </div>
+      <div class="card">
+        <h3>Band mix</h3>
         <div class="mixer" data-mixer></div>
       </div>
     </section>

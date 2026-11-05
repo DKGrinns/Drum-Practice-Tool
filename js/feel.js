@@ -11,7 +11,8 @@ export const CLICK_VOICES = new Set(['accent', 'click', 'sub']);
 export const MAX_OFFSET_MS = 50;
 
 // Which per-drum offset each voice uses.
-const GROUP = { kick: 'kick', snare: 'snare', rim: 'snare', hh: 'hats', oh: 'hats', ride: 'ride' };
+// The band leans with the drums: bass with the kick, chords with the snare.
+const GROUP = { kick: 'kick', snare: 'snare', rim: 'snare', hh: 'hats', oh: 'hats', ride: 'ride', bass: 'kick', keys: 'snare' };
 export const feelGroup = voice => GROUP[voice] || 'perc';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));

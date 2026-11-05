@@ -8,7 +8,7 @@
 // up the new files: the new worker installs in the background and takes
 // over on the next launch.
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE = 'groove-trainer-' + CACHE_VERSION;
 
 const ASSETS = [
@@ -24,6 +24,8 @@ const ASSETS = [
   'js/grooves.js',
   'js/storage.js',
   'js/feel.js',
+  'js/band.js',
+  'js/ui/band.js',
   'js/onset-worklet.js',
   'js/timing-analysis.js',
   'js/mic.js',

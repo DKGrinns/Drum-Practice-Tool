@@ -274,6 +274,11 @@ select {
 .voice-table th { background: #d9dde2; color: #0b0d10; font-weight: 800; text-align: left; padding: 6px 8px; }
 .voice-table td { padding: 6px 8px; border-top: 1px solid var(--line); }
 select.compact { flex: 0 1 auto; min-width: 140px; }
+.chord-now { text-align: center; font-weight: 800; font-size: 1.5rem; margin-top: 4px; letter-spacing: 0.02em; }
+.chord-now .next { color: var(--muted); font-size: 0.9rem; font-weight: 700; margin-left: 8px; }
+.band-chord { font-size: 2.4rem; font-weight: 900; text-align: center; min-height: 1.2em; }
+.band-chord .next { font-size: 1rem; color: var(--muted); font-weight: 700; display: block; }
+.compact-input { margin: 0; flex: 1; }
 .mix-more { margin-top: 6px; border-top: 1px solid var(--line); }
 .mix-more summary { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; color: var(--muted); cursor: pointer; }
 .cell.now, .grid-head.now { outline: 2px solid var(--text); outline-offset: -2px; }
