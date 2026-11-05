@@ -1,6 +1,6 @@
 # Groove Trainer
 
-A drum practice app built around reggae, funk, soul and fusion, with grooves from many more styles. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of 73 loopable grooves and a step-sequencer pattern builder. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
+A drum practice app built around reggae, funk, soul and fusion, with grooves from many more styles. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of 73 loopable grooves, a step-sequencer pattern builder, a backing band, timing feedback by microphone or e-kit, practice routines with a log, and gig set lists that a page-turner pedal can step through. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
 
 **Live app:** https://dkgrinns.github.io/Drum-Practice-Tool/
 
@@ -54,8 +54,19 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
   - Both trainers work with the metronome, grooves and your own patterns, and they count from bar 1 each time you press PLAY.
+  - *Count-in:* turn it on and PLAY first counts you in, for 1 or 2 bars at the starting tempo. **Spoken** has a voice count "one, two, three, four" over the clicks (2 bars: "one — two — one two three four"). **Clicks** gives clicks only. The clicks are timed exactly. The voice is started a little early to make up for the device's speech delay, which the app learns as you use it. If the browser has no speech voices, you get the clicks. The trainers, gap trainer and form map all start after the count-in.
+- **Practice:**
+  - *Routines:* a routine is a list of blocks. Each block has what to play (a groove, one of your saved patterns or the metronome), a tempo, how many minutes, and optionally the tempo trainer ("speed up to 84, +2 every 8 bars"), the gap trainer and a note. Three starter routines are included (reggae, funk & soul, Latin & Brazilian); edit them or make your own. Use **+ Add what's playing** to add the groove and tempo you have selected now. **Start routine** runs the blocks in order with a big countdown. The timer only runs while playing, so **Pause** (or STOP) pauses it. When a block's time is up, the bar finishes and the next block starts right on the bar line (after a count-in at the new tempo, if the count-in is on). **Back**, **Skip** and **End** do what they say. Your own trainer settings come back when the routine ends.
+  - *Practice log:* every time you play for 10 seconds or more it is logged: what, how long, the tempo (the top tempo if the trainer was on) and the routine. You see minutes today, the last 7 days, your streak (days in a row with at least a minute of practice) and a chart of the last 14 days.
+  - *Best clean tempos:* tap **✓ clean** on a session you played cleanly, and the best clean tempo for that groove or pattern is listed, with **Practise** to load it at that tempo. With the Feedback tab listening (mic or e-kit), steady takes (within ±15 ms on average, spread under 15 ms) are marked clean for you.
+  - *Backup:* **Export all** saves routines, the log and set lists to one file; **Import** merges a file back in (also on another device).
+- **Gig** (set lists for rehearsals and gigs):
+  - Make a set list with **New**, then add songs. **+ Add what's playing** adds the groove and tempo you have selected, or use **+ Add song** and **Edit**. Each song has what to play and its tempo, an optional key (sets the backing band's key), notes, and a song form such as `Intro 4, Verse 16, Chorus 8 x2, Solo 16, Outro 4` (sections and their length in bars; `x2` repeats a section).
+  - The stage view at the top shows the song in big letters with its notes, the next song, and **◀ Previous / Next ▶**. Loading a song sets the groove, tempo and key and turns the tempo trainer off. While playing, the change happens at the next bar line. While you play, the form map lights up the section you're in, shows the bar ("Verse · bar 5 of 16") and flashes the next section during the last bar.
+  - **Bluetooth page-turner pedal:** pair the pedal with the phone, tablet or laptop. While the Gig tab is open, <kbd>Page Down</kbd> or <kbd>→</kbd> goes to the next song and <kbd>Page Up</kbd> or <kbd>←</kbd> to the previous one, which covers most pedals. If yours sends something else, press **Set pedal keys** and press the pedal's two buttons. A pedal that sends ↑/↓ then turns songs on the Gig tab instead of changing the tempo.
+  - **Export set lists** / **Import** to share a set list with the band.
 
-**Keyboard:** <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap tempo · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM (hold <kbd>Shift</kbd> for ±5).
+**Keyboard:** <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap tempo · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM (hold <kbd>Shift</kbd> for ±5) · on the Gig tab <kbd>Page Down</kbd>/<kbd>→</kbd> next song, <kbd>Page Up</kbd>/<kbd>←</kbd> previous (or your pedal's keys).
 
 ## Adding new grooves
 
@@ -101,10 +112,13 @@ npm run test:browser            # the real app in headless Chromium (needs Playw
 | `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
 | `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
 | `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
-| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `band.js`, `feel.js`, `feedback.js`, `trainer.js` | One module per tab |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `band.js`, `feel.js`, `feedback.js`, `trainer.js`, `practice.js`, `gig.js` | One module per tab |
+| `js/ui/items.js` | "What to play" for routine blocks and songs: apply it, label it, the chooser form; the `saved` source plays a saved pattern without touching the builder |
+| `js/ui/countin.js` | Spoken count-in (speechSynthesis), started early by the learned speech delay |
+| `js/practice.js` | Routines, practice log (minutes per day, streak, best clean tempo), set lists, song form, count-in words, backup format (pure) |
 | `js/ui/mixer.js`, `widgets.js`, `keyboard.js` | Mixer, shared UI helpers, desktop shortcuts |
 | `js/engine.js` | AudioContext and the lookahead scheduler loop |
-| `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer, click dropout, click modes |
+| `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer, click dropout, click modes, count-in bars |
 | `js/feel.js` | Push/pull offsets, per-drum microtiming, humanize (pure functions) |
 | `js/band.js` | Backing band: chord numerals, progressions, band styles (bass + chord rhythms), notes per step (pure) |
 | `js/onset-worklet.js` | Drum-hit (onset) detector; runs as an AudioWorklet, also importable for tests |

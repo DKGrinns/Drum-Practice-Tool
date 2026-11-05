@@ -14,7 +14,7 @@ npx playwright install chromium
 ## Run
 
 ```sh
-npm run test:browser              # all tests (about 3 minutes)
+npm run test:browser              # all tests (about 4–5 minutes)
 node tests/browser/run-all.cjs mic band   # only tests whose file name contains "mic" or "band"
 node tests/browser/band.cjs       # a single test
 ```
@@ -35,6 +35,7 @@ Each test starts its own local web server. Screenshots and downloads go to `test
 | `tap-calibration.cjs` | Tap test with a 200 ms (Bluetooth-like) delay | about 220 ms, spread ±1 ms |
 | `midi-and-recording.cjs` | Virtual e-kit: per-drum scoring, dynamics, learn; recorded take, replay over the groove, WAV | positions `1+4 1&−6 2+18 …`, kick `+4 ms`, take `+12 ms`, WAV ≈ 0.5 MB |
 | `band.cjs` | Backing band notes, chords, walking bass, gap muting, levels | skanks on beats 2 and 4 at `0.0ms`, Am then Dm, `gap: band notes in silent bars = 0` |
+| `practice-gig.cjs` | Count-in (clicks and a fake speech voice), routine runner with 3 short blocks, practice log, clean takes, set list with page-turner keys and pedal learning, form map, backup, reload | count-in clicks 0.5 s apart and first kick at `+3.0000 s`; words `one two three four` each started ≈150 ms early, lead `150 -> ~99 ms`; `block 1 -> 2 … 6.000000 bars` (whole number), `block 2 -> 3 lands on a trainer bar line: yes`, gap notes `= 0`; trainer/gap restored; Steppers listed under best clean tempos; PageDown/→/PageUp/← and the learned ↓/↑ step through songs; form map `Intro … → Verse next [next lit] … End of the form`; backup round trip shows every log row (up to 15) |
 | `sound-levels.cjs` | Peak level of each drum sound (offline render) | every peak below 1.0; choke tail ≈ 0 |
 
 The virtual microphone replaces `getUserMedia` with audio generated inside the page, so the full pipeline runs (AudioWorklet detection, calibration, bleed filter, scoring) with known, exact timing.

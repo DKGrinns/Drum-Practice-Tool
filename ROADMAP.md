@@ -16,9 +16,9 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Steps 1–6 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–7 are done: metronome, tempo/gap trainers, swing, 73 grooves, pattern builder, time-feel trainers, mic and MIDI timing feedback with recording, backing band, practice routines and log, gig set lists with pedal support, count-in, offline PWA, and GitHub Pages deployment.
 
-Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
+Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard/items/countin), `js/practice.js` (practice structure, pure), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
 **Deployment:** turn Pages on once, under Settings → Pages → Source: **GitHub Actions**. The site is then at https://dkgrinns.github.io/Drum-Practice-Tool/
 
@@ -88,11 +88,14 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] Tests: `tests/band.test.js` (numerals, progressions, style strings, bass degrees and approach notes, voicings, one-drop skank on 2 and 4 with chord changes, odd meters, every groove gets a playable style). Browser test: skanks exactly on 2 and 4, a jazz walking line with approach notes over ii–V–I, no band notes in gap-trainer silent bars, and sound levels balanced against the drums.
 - [ ] Possible later: per-groove custom bass lines (e.g. classic one-drop riffs), more chord voicings and inversions, a bass-only "play along with the bass player" mode, minor-key styles for more genres.
 
-### Step 7 — Practice structure (section 5)
-- [ ] Routine builder: a list of blocks (groove or metronome settings + duration + trainer settings), run in order with a timer and auto-advance.
-- [ ] Practice log: minutes per day, what was practised, best clean tempo per groove, streaks. Stored in localStorage, with export/import.
-- [ ] Gig prep: set lists of songs (tempo, meter, groove or pattern, notes), a next/previous song control (bind it to keyboard keys, so a Bluetooth page-turner pedal works), and a song-form map.
-- [ ] Spoken count-in using `speechSynthesis`, with a synthesized-click fallback.
+### Step 7 — Practice structure (section 5) ✅ (done)
+- [x] Routine builder (`js/ui/practice.js`, Practice tab): blocks with what to play (groove / saved pattern / metronome with meter and subdivision), tempo, minutes, tempo trainer, gap trainer and a note; add, edit, reorder, delete; "Add what's playing"; three starter routines (reggae, funk & soul, Latin & Brazilian). The runner shows a countdown, next block and total time left. The timer runs only while playing and not during the count-in. When time is up the engine stops at the next bar line (`engine.stopAtNextBar`) and the next block starts exactly on that bar line. The user's trainer/gap settings are restored at the end.
+- [x] Practice log: every play of 10 s or more (what, seconds, top tempo, routine). Minutes today / 7 days / total, streak, 14-day chart, recent sessions with a "✓ clean" toggle. Feedback takes are reported on the bus (`take`) and steady ones (|mean| ≤ 15 ms, spread ≤ 15 ms, ≥ 16 hits) are marked clean automatically. Best clean tempo per groove/pattern/meter with "Practise". Export/import of routines + log + set lists as one file (merge by id).
+- [x] Gig prep (`js/ui/gig.js`, Gig tab): set lists of songs (item, tempo, key → band key, notes, song form). Stage view with big title, next song and Prev/Next. PageDown/→ and PageUp/← (or learned pedal keys, captured before the other shortcuts) work while the Gig tab is open. The song-form map (`parseForm`, `formPosition`) highlights the section and bar while playing and flashes the next section in the last bar. Set-list export/import.
+- [x] Count-in (Trainer tab): 1 or 2 bars before PLAY and before each routine block. The sequencer plays the count-in bars (`countIn` events with negative barCount; trainers, gap, dropout, band, feedback grid and pattern start at bar 0). Spoken count-in (`js/ui/countin.js`) uses speechSynthesis on top of the clicks; words are started early by a learned per-device speech delay (default 150 ms). With no voices it falls back to clicks only.
+- [x] Tests: `tests/practice.test.js` (items, routines, log/streak/month boundaries, best tempos, clean takes, form parsing/position, count-in words, backup round trip, sequencer count-in incl. trainer/gap/6/8, stopping inside onStep). Browser test `practice-gig.cjs`.
+- [ ] Needs a real-world check: the spoken count-in by ear on each device (Windows/Android/iPhone voices start at different speeds; the app learns the delay after a few count-ins), and a real Bluetooth page-turner pedal.
+- [ ] Possible later: show the best clean tempo on groove cards, a weekly goal, song-form sections with their own groove (e.g. half-time bridge), and auto-start of the next song.
 
 ### Step 8 — Learning from records A: hear what is playing in Chrome (section 7)
 This must work well.
@@ -114,8 +117,10 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 7, practice structure.** The routine runner can drive the existing pieces: set `S.source` / `S.grooveId` / `S.bpm` / trainer settings, then `refreshSequence()` and `togglePlay()`. The take history from the Feedback tab (`localStorage grooveTrainer.takeHistory`) can feed the practice log. Use `bus.on('step')` to count bars and time.
+- Next up: **Step 8, hear what's playing in Chrome.** Give it extra care (see the user's note below). Suggested shape: a new `Listen` tab (`js/ui/listen.js`) plus pure modules for tempo detection (`js/tempo.js`: onset envelope → autocorrelation/tempogram → BPM + confidence + beat phase) and time-stretch (`js/stretch-worklet.js`, WSOLA, importable in Node like `onset-worklet.js`), with unit tests on synthetic signals (click tracks at known BPMs with swing, ghost notes and noise; reggae one-drop where beat 1 is empty; half/double-time ambiguity). The existing onset detector (`js/onset-worklet.js`) can feed the onset envelope. "Use this tempo" → `changeBpm()` in transport.js. The rough transcription can open its result with `openInBuilder(pattern, name)` from `js/ui/builder.js`. A beat-locked click can use `startPlayback({ at })` (exact start time on the audio clock).
+- Step 7 pieces to reuse: `startPlayback({ at, countIn })`, `stopPlayback()` and `stopAtNextBar(cb)` in transport.js; `applyItem(item)` / `currentItem()` in `js/ui/items.js`; the `take` bus event; `countIn` steps (negative `barCount`) — anything listening to `step` should ignore `ev.countIn`.
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
+- Local Windows sessions: Git and Node were installed with winget; Playwright with `npm install --no-save playwright` and `npx playwright install chromium`. A fresh PowerShell may need its PATH refreshed after installing.
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.
 - The user plays mostly reggae, funk, soul and jazz fusion, and also wants Latin and Brazilian grooves.
