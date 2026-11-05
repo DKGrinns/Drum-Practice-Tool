@@ -42,6 +42,8 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   4. Press **Play** on anything (metronome, a groove, your pattern, with any trainer) and play along. Each hit is matched to the nearest beat, 8th, triplet or 16th (your choice; swing is taken into account). You see how early or late it was in milliseconds, plus a timeline of recent hits, your average, your spread (consistency), the share of hits within ±10 ms, and whether you're drifting (rushing or dragging).
   5. Press **Stop** for the take report: a summary in plain words, your average at each position in the bar (e.g. you rush the "&" of 4), and a bar-by-bar chart. This works through gap-trainer silences and click dropout too.
   - With speakers, the app ignores quiet sounds that line up with its own clicks and drums (speaker bleed), so they aren't scored as your hits. Headphones still give the cleanest results.
+  - **Electronic kit (MIDI):** choose **Electronic kit (MIDI)**, plug the kit in by USB and press **Connect**. Each hit is timed exactly by the kit, so no calibration is needed. The take report adds a **By drum** table (timing and velocity for each drum) and **snare dynamics**: how even your ghost notes and accents are, and the gap between them. Standard General MIDI notes map automatically; to fix a pad, choose the drum, press **Learn** and hit the pad. **Play the app's drum sounds from the pads** turns practice pads into a kit. Web MIDI works in Chrome and Edge on computers and in Chrome on Android, but not in Safari (iPhone, iPad or Mac).
+  - **Recording takes:** turn on **Record takes** (with the mic on), and every take from Play to Stop is recorded. **Recorded takes** keeps the last 5 until you close the app: **Listen**, **Over the groove** (plays the take in time with the same groove, latency-corrected), **WAV** (download) and **Report**. **Recent takes** lists the scores of your last takes so you can compare them over time.
   - Tips: louder is fine, because the detector looks for attacks, not volume. Very soft double kicks played with a felt beater can be missed. On iPhone, the playback volume may drop while the mic is on (an iOS rule), so headphones help there.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
@@ -100,7 +102,9 @@ npm test                        # timing, patterns, feel, onset detection and sc
 | `js/feel.js` | Push/pull offsets, per-drum microtiming, humanize (pure functions) |
 | `js/onset-worklet.js` | Drum-hit (onset) detector; runs as an AudioWorklet, also importable for tests |
 | `js/timing-analysis.js` | Scoring: grid, hit matching, summaries, latency estimation, speaker-bleed filter (pure) |
-| `js/mic.js` | Microphone input (no echo cancellation/noise suppression/auto gain) feeding the detector |
+| `js/mic.js` | Microphone input (no echo cancellation/noise suppression/auto gain) feeding the detector; raw audio for recording |
+| `js/midi.js` | Web MIDI e-kit input: GM drum map, pad learning, timestamps converted to the audio clock as heard |
+| `js/recorder.js` | Sample-aligned take recording, WAV export, playback alignment over the groove |
 | `js/synth.js` | Synthesized drum voices |
 | `js/patterns.js` | Pattern model, metronome patterns, saved-pattern library, JSON import/export |
 | `js/grooves.js` | The groove library |

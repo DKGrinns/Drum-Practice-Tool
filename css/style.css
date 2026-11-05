@@ -262,6 +262,18 @@ select {
 .fb-bars::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--line); }
 .fb-bar { flex: 1; position: relative; height: 100%; }
 .fb-bar i { position: absolute; left: 15%; right: 15%; border-radius: 2px; }
+.take { border-top: 1px solid var(--line); padding: 10px 0; }
+.take .t-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 700; }
+.take .t-meta { color: var(--muted); font-size: 0.85rem; }
+.take .btn-row button { min-height: 44px; }
+.take.playing { background: #10221f; }
+.history { display: grid; gap: 2px; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.history .h-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.history .h-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voice-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; margin: 6px 0 12px; font-size: 0.92rem; }
+.voice-table th { background: #d9dde2; color: #0b0d10; font-weight: 800; text-align: left; padding: 6px 8px; }
+.voice-table td { padding: 6px 8px; border-top: 1px solid var(--line); }
+select.compact { flex: 0 1 auto; min-width: 140px; }
 .mix-more { margin-top: 6px; border-top: 1px solid var(--line); }
 .mix-more summary { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; color: var(--muted); cursor: pointer; }
 .cell.now, .grid-head.now { outline: 2px solid var(--text); outline-offset: -2px; }

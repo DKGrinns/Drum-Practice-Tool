@@ -216,6 +216,43 @@
         <p class="hint">This browser can't use the microphone here. Use a recent Chrome, Edge, Safari or Firefox over https (the GitHub Pages link works).</p>
       </div>
       <div class="card">
+        <div class="row wrap-row">
+          <h3>Listen with</h3>
+          <div class="seg" id="fbInput" role="group" aria-label="Input">
+            <button data-value="mic">Microphone</button><button data-value="midi">Electronic kit (MIDI)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="midiCard">
+        <div class="row">
+          <h3>Electronic kit</h3>
+          <button class="toggle wide-toggle" id="midiToggle" aria-pressed="false">Connect</button>
+        </div>
+        <p class="hint" id="midiHint">Connect your e-kit's USB (or a MIDI interface), then press Connect. Hits are timed exactly from the kit, per drum, with velocity — no calibration needed. Works in Chrome, Edge and Android; not in Safari (iPhone/iPad/Mac).</p>
+        <p class="mic-msg" id="midiMsg" role="status"></p>
+        <div class="row">
+          <span>Play the app's drum sounds from the pads</span>
+          <button class="toggle" id="midiMonitor" aria-pressed="false">Off</button>
+        </div>
+        <details class="drum-offsets">
+          <summary>Pad mapping &amp; delay</summary>
+          <p class="hint">Standard (General MIDI) notes are mapped automatically. To fix a pad: choose the drum, press Learn, then hit the pad.</p>
+          <div class="row wrap-row">
+            <select id="learnVoice" aria-label="Drum to learn"></select>
+            <button id="learnBtn">Learn</button>
+            <button id="learnReset" class="danger">Reset mapping</button>
+          </div>
+          <p class="hint" id="learnMsg"></p>
+          <div class="row">
+            <span>Drum module delay</span>
+            <div class="mini-stepper"><button id="midiLatDown" aria-label="Less">−</button><output id="midiLatVal">0</output><button id="midiLatUp" aria-label="More">+</button></div>
+            <span>ms</span>
+          </div>
+        </details>
+      </div>
+
+      <div class="card" id="micCard">
         <div class="row">
           <h3>Microphone</h3>
           <button class="toggle wide-toggle" id="micToggle" aria-pressed="false">Start listening</button>
@@ -253,7 +290,22 @@
         <canvas id="fbTimeline" class="fb-timeline" height="160" aria-label="Recent hits: above the line = late, below = early"></canvas>
         <div class="fb-axis"><span>▲ late</span><span>each dot is a hit (newest on the right)</span><span>▼ early</span></div>
         <div class="fb-stats" id="fbStats"></div>
+        <div class="row">
+          <span>Record takes (mic) for playback</span>
+          <button class="toggle" id="recToggle" aria-pressed="false">Off</button>
+        </div>
         <div class="btn-row"><button id="fbReset">New take</button><button id="fbReportBtn">Show report</button></div>
+      </div>
+
+      <div class="card" id="takesCard" hidden>
+        <h3>Recorded takes</h3>
+        <p class="hint">The last 5 recordings (kept until you close the app). "Over the groove" plays the take in time with the same groove.</p>
+        <div id="takesList"></div>
+      </div>
+
+      <div class="card" id="historyCard" hidden>
+        <div class="row"><h3>Recent takes</h3><button id="historyClear" class="danger">Clear</button></div>
+        <div class="history" id="historyList"></div>
       </div>
 
       <div class="card" id="fbReport" hidden>

@@ -16,6 +16,8 @@ export class MicInput {
     this.engine = engine;
     this.onOnset = () => {};   // ({ time, peak }) per detected hit
     this.onLevel = () => {};   // (peak 0..1) about 40 times a second
+    this.onAudio = () => {};   // (Float32Array, frame) raw samples while recording
+    this.recording = false;
     this.active = false;
     this.sensitivity = 60;
     this.moduleLoaded = false;
@@ -55,6 +57,7 @@ export class MicInput {
         const d = e.data;
         if (d.type === 'onset') this.onOnset({ time: d.time, peak: d.peak });
         else if (d.type === 'level') this.onLevel(d.value);
+        else if (d.type === 'audio') this.onAudio(d.data, d.frame);
       };
     } else {
       const size = 1024;
@@ -63,13 +66,21 @@ export class MicInput {
       this.node.onaudioprocess = e => {
         // Best estimate of when this block was captured, on the audio clock.
         const start = Math.round(e.playbackTime * ctx.sampleRate) - 2 * size;
-        this.det.process(e.inputBuffer.getChannelData(0), start);
+        const data = e.inputBuffer.getChannelData(0);
+        this.det.process(data, start);
+        if (this.recording) this.onAudio(data.slice(), start);
         this.onLevel(this.det.takeLevel());
       };
     }
     this.source.connect(this.node);
     this.node.connect(this.sink);
     this.active = true;
+  }
+
+  // Start/stop sending raw audio to onAudio (for recording takes).
+  record(on) {
+    this.recording = on;
+    if (this.node && this.node.port) this.node.port.postMessage({ type: 'record', value: on });
   }
 
   setSensitivity(v) {
@@ -84,6 +95,7 @@ export class MicInput {
     try { this.source.disconnect(); this.node.disconnect(); this.sink.disconnect(); } catch (e) { /* ignore */ }
     this.node = this.det = this.source = this.sink = this.stream = null;
     this.active = false;
+    this.recording = false;
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* ignore */ }
   }
 }

@@ -16,7 +16,7 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Steps 1–4 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–5 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
 Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
@@ -72,10 +72,13 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] Browser test with a virtual drummer and virtual mic (fixed delay + speaker bleed + room noise): the speaker test measured the delay, and the take report showed exactly +15 ms on the beats / −5 ms on the "&"s as played, with all 20 speaker clicks ignored at high sensitivity. The tap test measured a 200 ms (Bluetooth-like) delay correctly.
 - [ ] Needs a real-world check by the user: different phones/laptops, acoustic kit volume, room echo. Tune the default sensitivity (60) if needed.
 
-### Step 5 — Playing feedback B: MIDI kit and recording (section 1)
-- [ ] Web MIDI input (Chrome/Edge/Android; **not** supported in iOS Safari, so show a message there). Map GM drum notes to voices, with a mapping editor.
-- [ ] Per-drum timing scoring using MIDI timestamps, plus dynamics: velocity per hit, and ghost note vs. accent consistency.
-- [ ] Record takes from the mic (and the MIDI hit list), play a take back over the groove, keep the last few takes, and compare scores over time.
+### Step 5 — Playing feedback B: MIDI kit and recording (section 1) ✅ (done)
+- [x] Web MIDI input (`js/midi.js`): note-on parsing, GM + Roland/Alesis/Yamaha drum notes mapped to voices, "learn" mapping (saved), optional app sounds from the pads, drum-module delay offset. Timestamps are converted to the audio clock *as heard* via `getOutputTimestamp()`, so no calibration is needed. There's a message for Safari (no Web MIDI).
+- [x] Per-drum timing (`summarizeByVoice`) and dynamics (`dynamics`: ghost/accent groups, evenness, range) in the take report.
+- [x] Recording: the worklet streams raw mic samples tagged with audio-clock frames (`js/recorder.js`, `TakeRecorder`, max 3 min/take). The last 5 takes are kept in memory, with Listen, Over the groove (`alignTake`, latency-corrected), WAV download and Report.
+- [x] Recent takes history (last 50 summaries in localStorage) for comparing scores over time.
+- [x] Tests: `tests/midi-recorder.test.js`. Browser test with a virtual e-kit gave exact per-drum offsets (kick +4, snare +18, ghosts −6 ms) and the right dynamics, the learn mapping worked, and the recorded take scored +12 ms as played; replay alignment checked; WAV download checked.
+- [ ] Needs real-world check: a real e-kit (Roland/Alesis/Yamaha) over USB, and the over-the-groove sync by ear.
 
 ### Step 6 — Backing band (section 3)
 - [ ] Synthesized bass (sub sine/saw with filter envelope) and a chord instrument (reggae skank, funk stabs, soul organ/keys).
@@ -109,7 +112,7 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 5, MIDI kit and recording.** Reuse `js/timing-analysis.js` for scoring: MIDI note-on events need converting to AudioContext time (`performance.now()` timestamps -> `ctx.getOutputTimestamp()` mapping), then `matchHit` works unchanged. Per-drum scoring = group hits by MIDI note -> voice. Recording: MediaRecorder on the mic stream from `js/mic.js`, plus the hit list, aligned to the beat log.
+- Next up: **Step 6, backing band.** Add bass and chord voices to `js/synth.js` (pitched, so they need a note/pitch argument), give grooves optional `bass` / `chords` parts (a new pattern field, not a drum track), and let the engine schedule them from the same sequencer steps so they follow tempo, swing, trainers, gap mutes and dropout. Add "Bass" and "Keys/Guitar" channels to the mixer.
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.

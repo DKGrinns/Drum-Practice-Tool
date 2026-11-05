@@ -44,7 +44,8 @@ export function matchHit(onset, grid, latency = 0) {
   const g = grid[nearestIndex(grid, t)];
   const err = t - g.time;
   if (Math.abs(err) > g.spacing * 0.5 + 1e-9) return null; // before the first / after the last point
-  return { time: t, error: err * 1000, barCount: g.barCount, beat: g.beat, sub: g.sub, res: g.res, peak: onset.peak };
+  return { time: t, error: err * 1000, barCount: g.barCount, beat: g.beat, sub: g.sub, res: g.res, peak: onset.peak,
+    voice: onset.voice, velocity: onset.velocity };
 }
 
 export const matchHits = (onsets, grid, latency) => onsets.map(o => matchHit(o, grid, latency)).filter(Boolean);
@@ -168,4 +169,39 @@ export function isBleed(onset, soundTimes, latency, bleedPeak) {
   if (onset.peak > bleedPeak * 2.5) return false;
   const t = onset.time - latency;
   return soundTimes.some(s => Math.abs(s - t) < 0.012);
+}
+
+// ------------------------------------------------------ per drum / dynamics
+// (electronic kits over MIDI: each hit knows its drum and velocity 1..127)
+
+// Timing summary for each drum that was hit.
+export function summarizeByVoice(hits) {
+  const groups = new Map();
+  for (const h of hits) {
+    if (!h.voice) continue;
+    if (!groups.has(h.voice)) groups.set(h.voice, []);
+    groups.get(h.voice).push(h);
+  }
+  return [...groups.entries()].map(([voice, hs]) => {
+    const s = summarize(hs);
+    const vels = hs.map(h => h.velocity).filter(v => v != null);
+    return { voice, count: s.count, mean: s.mean, sd: s.sd, within10: s.within10, velocity: mean(vels), velocitySd: sd(vels) };
+  }).sort((a, b) => b.count - a.count);
+}
+
+// Dynamics for one drum: splits hits into ghost notes (velocity < ghostMax)
+// and accents (>= accentMin) and reports how even each group is. A small
+// spread inside each group and a big gap between them = controlled
+// dynamics.
+export function dynamics(hits, ghostMax = 50, accentMin = 90) {
+  const v = hits.map(h => h.velocity).filter(x => x != null);
+  const ghosts = v.filter(x => x < ghostMax), accents = v.filter(x => x >= accentMin);
+  const middle = v.filter(x => x >= ghostMax && x < accentMin);
+  return {
+    count: v.length,
+    ghosts: { count: ghosts.length, mean: mean(ghosts), sd: sd(ghosts) },
+    accents: { count: accents.length, mean: mean(accents), sd: sd(accents) },
+    middle: { count: middle.length, mean: mean(middle), sd: sd(middle) },
+    range: ghosts.length && accents.length ? mean(accents) - mean(ghosts) : 0,
+  };
 }

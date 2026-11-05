@@ -156,15 +156,34 @@ if (typeof registerProcessor === 'function') {
         onOnset: o => this.port.postMessage({ type: 'onset', time: o.time, peak: o.peak }),
       });
       this.blocks = 0;
+      // Recording: raw samples are batched (~43 ms) and sent with the audio
+      // clock frame of their first sample.
+      this.recording = false;
+      this.rec = new Float32Array(2048);
+      this.recLen = 0;
+      this.recFrame = 0;
       this.port.onmessage = e => {
         if (e.data.type === 'sensitivity') this.det.setSensitivity(e.data.value);
+        else if (e.data.type === 'record') { this.flushRec(); this.recording = e.data.value; }
       };
+    }
+    flushRec() {
+      if (!this.recLen) return;
+      const data = this.rec.slice(0, this.recLen);
+      this.port.postMessage({ type: 'audio', frame: this.recFrame, data }, [data.buffer]);
+      this.recLen = 0;
     }
     process(inputs) {
       const ch = inputs[0] && inputs[0][0];
       // currentFrame = audio-clock frame of this block, so onset times line up
       // with AudioContext.currentTime.
       if (ch) this.det.process(ch, currentFrame);
+      if (ch && this.recording) {
+        if (!this.recLen) this.recFrame = currentFrame;
+        if (this.recLen + ch.length > this.rec.length) { this.flushRec(); this.recFrame = currentFrame; }
+        this.rec.set(ch, this.recLen);
+        this.recLen += ch.length;
+      }
       if (++this.blocks % 8 === 0) this.port.postMessage({ type: 'level', value: this.det.takeLevel() });
       return true;
     }
