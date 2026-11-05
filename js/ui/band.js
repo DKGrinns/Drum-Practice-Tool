@@ -55,7 +55,7 @@ function renderChordNow(bar = 0) {
 }
 
 // Update the chord readout at each bar line.
-bus.on('step', ev => { if (ev.beat === 0 && ev.stepInBeat === 0) renderChordNow(ev.barCount); });
+bus.on('step', ev => { if (ev.beat === 0 && ev.stepInBeat === 0 && !ev.countIn) renderChordNow(ev.barCount); });
 bus.on('stop', () => renderChordNow(0));
 bus.on('sequence', () => renderChordNow(0));
 

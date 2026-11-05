@@ -134,10 +134,14 @@ export class Sequencer {
     }
   }
 
-  start(time, seed = Date.now()) {
+  // `countIn` bars of plain clicks come first (at the starting tempo). They
+  // have negative barCount (-2, -1) and countIn: true; the trainers, gap,
+  // dropout and pattern all start at bar 0, after the count-in.
+  start(time, seed = Date.now(), countIn = 0) {
     this.rand = seededRandom(seed);
     this.running = true;
-    this.barCount = 0;      // bars since start (drives the trainers)
+    this.countInLeft = clamp(Math.round(countIn) || 0, 0, 4);
+    this.barCount = this.countInLeft ? -this.countInLeft : 0; // bars since start (drives the trainers)
     this.patternBar = 0;    // bar inside the pattern
     this.beginBar(time);
   }
@@ -160,8 +164,9 @@ export class Sequencer {
       this.pending = null;
       this.patternBar = 0;
     }
-    this.barBpm = this.bpmForBar(this.barCount);
-    this.barMuted = !!(this.config.gap && this.config.gap.enabled && gapMuted(this.config.gap, this.barCount));
+    this.inCountIn = this.barCount < 0;
+    this.barBpm = this.bpmForBar(Math.max(0, this.barCount));
+    this.barMuted = !this.inCountIn && !!(this.config.gap && this.config.gap.enabled && gapMuted(this.config.gap, this.barCount));
     this.beatInBar = 0;
     this.stepInBeat = 0;
     this.beatStart = time;
@@ -172,7 +177,7 @@ export class Sequencer {
 
   // Decide once per beat whether click dropout silences it.
   beginBeat() {
-    this.beatMuted = beatDropped(this.config.dropout, this.barCount, this.beatInBar, this.rand || Math.random);
+    this.beatMuted = !this.inCountIn && beatDropped(this.config.dropout, this.barCount, this.beatInBar, this.rand || Math.random);
   }
 
   // Exact time of the step we are about to play.
@@ -193,6 +198,7 @@ export class Sequencer {
       const t = this.stepTime();
       if (t >= until) break;
       this.emit(t);
+      if (!this.running) break; // stopped from inside onStep (e.g. at a bar line)
       this.lastTime = t;
       this.advance();
       count++;
@@ -205,16 +211,23 @@ export class Sequencer {
     const { spb, beatsPerBar } = seq;
     const stepsPerBar = spb * beatsPerBar;
     const bar = this.patternBar % seq.bars;
-    const index = bar * stepsPerBar + this.beatInBar * spb + this.stepInBeat;
+    let index = bar * stepsPerBar + this.beatInBar * spb + this.stepInBeat;
     const hits = [];
-    for (const voice in seq.tracks) {
-      const v = seq.tracks[voice][index];
-      if (v) hits.push({ voice, value: v, velocity: VELOCITY[v] });
+    if (this.inCountIn) {
+      // Count-in: a click on every beat, accented on 1. No pattern notes.
+      index = -1;
+      if (this.stepInBeat === 0) hits.push(this.beatInBar === 0 ? { voice: 'accent', value: 2, velocity: VELOCITY[2] } : { voice: 'click', value: 1, velocity: VELOCITY[1] });
+    } else {
+      for (const voice in seq.tracks) {
+        const v = seq.tracks[voice][index];
+        if (v) hits.push({ voice, value: v, velocity: VELOCITY[v] });
+      }
     }
     this.onStep({
       time,
       hits,
-      index,                       // step index inside the pattern
+      countIn: this.inCountIn,     // a count-in step (before bar 0)
+      index,                       // step index inside the pattern (-1 in the count-in)
       bar,                         // bar inside the pattern
       barCount: this.barCount,     // bars since start
       beat: this.beatInBar,
@@ -237,8 +250,8 @@ export class Sequencer {
     this.beatStart += this.beatDur;
     this.beatInBar++;
     if (this.beatInBar >= seq.beatsPerBar) {
+      if (!this.inCountIn) this.patternBar = (this.patternBar + 1) % seq.bars;
       this.barCount++;
-      this.patternBar = (this.patternBar + 1) % seq.bars;
       this.beginBar(this.beatStart);
     } else {
       this.beatDur = 60 / this.currentBpm();

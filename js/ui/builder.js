@@ -43,6 +43,7 @@ registerSource('builder', {
   },
 });
 export const panel = { id: 'builder', label: 'Builder', source: 'builder', onShow: () => renderGrid() };
+export const currentDraft = () => draft;
 
 function markDirty() {
   dirty = true;

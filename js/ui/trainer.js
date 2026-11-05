@@ -1,8 +1,9 @@
 // trainer.js — the Trainer tab: tempo trainer, gap trainer and settings.
 
 import { $, clamp, S, saveSettings, engine, bus } from './core.js';
-import { setToggle, holdRepeat, toast } from './widgets.js';
+import { setToggle, holdRepeat, toast, setSeg, segHandler } from './widgets.js';
 import { updateWake } from './transport.js';
+import { speechAvailable } from './countin.js';
 
 export const panel = { id: 'trainer', label: 'Trainer' }; // doesn't change the source
 
@@ -33,7 +34,17 @@ function renderSteppers() {
 // The BPM controls edit the trainer's start tempo while the trainer is on.
 bus.on('tempo', renderSteppers);
 
+export function renderCountIn() {
+  setToggle($('countInToggle'), S.countIn.enabled);
+  setSeg($('countInBars'), String(S.countIn.bars));
+  setSeg($('countInVoice'), S.countIn.voice);
+  $('countInHint').textContent = !speechAvailable()
+    ? 'This browser has no speech voices, so the count-in uses clicks only.'
+    : S.countIn.voice === 'speech' ? 'A voice counts "one, two, three, four" over the clicks. Two bars count "one — two — one two three four".' : 'Clicks only (accent on 1).';
+}
+
 export function renderTrainer() {
+  renderCountIn();
   setToggle($('trainerToggle'), S.trainer.enabled);
   setToggle($('gapToggle'), S.gap.enabled);
   setToggle($('gapHideToggle'), S.gap.hideVisual);
@@ -62,4 +73,7 @@ $('wakeToggle').addEventListener('click', () => {
   renderTrainer();
   saveSettings();
 });
+$('countInToggle').addEventListener('click', () => { S.countIn.enabled = !S.countIn.enabled; renderCountIn(); saveSettings(); });
+segHandler($('countInBars'), v => { S.countIn.bars = Number(v) === 2 ? 2 : 1; renderCountIn(); saveSettings(); });
+segHandler($('countInVoice'), v => { S.countIn.voice = v; renderCountIn(); saveSettings(); });
 $('masterVol').addEventListener('input', e => { S.master = e.target.value / 100; engine.setMasterVolume(S.master); saveSettings(); });

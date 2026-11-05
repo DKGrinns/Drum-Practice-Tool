@@ -419,6 +419,7 @@ function finishTake() {
   history = history.slice(0, 50);
   store.save(HISTORY_KEY, history);
   renderHistory();
+  bus.emit('take', s); // the practice log uses the score to mark clean takes
 }
 
 function renderHistory() {

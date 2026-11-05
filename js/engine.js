@@ -88,7 +88,11 @@ export class Engine {
 
   setSequence(seq, immediate) { this.seq.setSequence(seq, immediate); }
 
-  async start() {
+  // opts.at       audio-clock time of the first beat (e.g. a bar line of the
+  //               previous block, for seamless routine changes)
+  // opts.delay    seconds from now when `at` isn't given (default 0.08)
+  // opts.countIn  bars of count-in clicks before bar 1
+  async start(opts = {}) {
     const ctx = this.ensureAudio();
     if (ctx.state !== 'running') {
       try { await ctx.resume(); } catch (e) { /* ignore */ }
@@ -96,7 +100,10 @@ export class Engine {
     this.visualQueue = [];
     this.beatLog = [];
     this.soundLog = [];
-    this.seq.start(ctx.currentTime + 0.08);
+    this.barStop = null;
+    const delay = Math.max(0.03, opts.delay || 0.08);
+    this.startTime = opts.at != null ? Math.max(opts.at, ctx.currentTime + 0.01) : ctx.currentTime + delay;
+    this.seq.start(this.startTime, Date.now(), opts.countIn || 0);
     this.playing = true;
     this.tick();
     this.ticker.start();
@@ -104,10 +111,16 @@ export class Engine {
 
   stop() {
     this.playing = false;
+    this.barStop = null;
     this.seq.stop();
     this.ticker.stop();
     this.visualQueue = [];
   }
+
+  // Stop at the next bar line (after the count-in) and call cb(barTime)
+  // with the audio-clock time of that bar line, so the next thing can start
+  // exactly there. Notes before the bar line still play.
+  stopAtNextBar(cb) { this.barStop = cb; }
 
   tick() {
     if (!this.playing || !this.ctx) return;
@@ -117,6 +130,26 @@ export class Engine {
   }
 
   handleStep(ev) {
+    if (this.barStop && ev.beat === 0 && ev.stepInBeat === 0 && !ev.countIn) {
+      const cb = this.barStop;
+      this.barStop = null;
+      this.playing = false;
+      this.seq.stop();
+      this.ticker.stop();
+      // After the scheduler loop has unwound.
+      Promise.resolve().then(() => cb(ev.time));
+      return;
+    }
+    if (ev.countIn) {
+      // Count-in clicks only: never moved, never muted by the mixer.
+      for (const h of ev.hits) {
+        const t = Math.max(ev.time, this.ctx.currentTime + 0.002);
+        this.synth.play(h.voice, t, h.velocity * Math.max(0.5, this.getLevel(h.voice)));
+        this.logSound(t);
+      }
+      this.visualQueue.push(ev);
+      return;
+    }
     if (ev.stepInBeat === 0) {
       this.beatLog.push({ time: ev.time, dur: ev.beatDur, barCount: ev.barCount, beat: ev.beat, beatsPerBar: ev.beatsPerBar, muted: ev.muted });
       if (this.beatLog.length > 6000) this.beatLog.splice(0, 1000);

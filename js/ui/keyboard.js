@@ -3,7 +3,7 @@
 import { $ } from './core.js';
 import { togglePlay, tap, changeBpm, shownBpm } from './transport.js';
 
-function isTyping(el) {
+export function isTyping(el) {
   return el && (el.isContentEditable || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' ||
     (el.tagName === 'INPUT' && !['range', 'checkbox', 'button'].includes(el.type)));
 }

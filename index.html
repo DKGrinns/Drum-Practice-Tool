@@ -346,6 +346,22 @@
     <section class="panel" id="panel-trainer" role="tabpanel">
       <div class="card">
         <div class="row">
+          <h3>Count-in</h3>
+          <button class="toggle" id="countInToggle" aria-pressed="false">Off</button>
+        </div>
+        <p class="hint">Counts you in before PLAY starts (and before each block of a routine).</p>
+        <div class="row wrap-row">
+          <div class="seg" id="countInBars" role="group" aria-label="Count-in length">
+            <button data-value="1">1 bar</button><button data-value="2">2 bars</button>
+          </div>
+          <div class="seg" id="countInVoice" role="group" aria-label="Count-in sound">
+            <button data-value="speech">Spoken</button><button data-value="clicks">Clicks</button>
+          </div>
+        </div>
+        <p class="hint" id="countInHint"></p>
+      </div>
+      <div class="card">
+        <div class="row">
           <h3>Tempo trainer</h3>
           <button class="toggle" id="trainerToggle" aria-pressed="false">Off</button>
         </div>
@@ -380,7 +396,102 @@
           <span>Keep screen awake while playing</span>
           <button class="toggle" id="wakeToggle" aria-pressed="true">On</button>
         </div>
-        <p class="hint">Keys: <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM (<kbd>Shift</kbd> ±5)</p>
+        <p class="hint">Keys: <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 BPM (<kbd>Shift</kbd> ±5) · on the Gig tab <kbd>PgDn</kbd>/<kbd>→</kbd> next song, <kbd>PgUp</kbd>/<kbd>←</kbd> previous</p>
+      </div>
+    </section>
+
+    <!-- Practice: routines, runner, log (js/ui/practice.js) -->
+    <section class="panel" id="panel-practice" role="tabpanel">
+      <div class="card run-card" id="runCard" hidden>
+        <div class="run-top" id="runBlock"></div>
+        <div class="run-name" id="runName"></div>
+        <div class="run-note" id="runNote"></div>
+        <div class="run-left" id="runLeft">0:00</div>
+        <div class="progress"><i id="runBar"></i></div>
+        <div class="run-next" id="runNext"></div>
+        <div class="btn-row">
+          <button id="runBack" aria-label="Restart block or previous block">⏮ Back</button>
+          <button id="runPause" class="primary">❚❚ Pause</button>
+          <button id="runSkip" aria-label="Next block">⏭ Skip</button>
+          <button id="runEnd" class="danger">■ End</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Routine</h3>
+        <p class="hint">A list of blocks, each with what to play, a tempo, how long, and optional trainers. Start it and it runs block after block, changing at a bar line.</p>
+        <label class="select-row"><span>Routine</span><select id="routineSelect"></select></label>
+        <div class="btn-row">
+          <button id="rNew">New</button><button id="rRename">Rename</button><button id="rDuplicate">Duplicate</button><button id="rDelete" class="danger">Delete</button>
+        </div>
+        <div class="block-list" id="blockList"></div>
+        <div class="btn-row"><button id="rAddBlock">+ Add block</button><button id="rAddCurrent">+ Add what's playing</button></div>
+        <p class="hint" id="routineTotal"></p>
+        <button id="rStart" class="primary big-btn">▶ Start routine</button>
+      </div>
+
+      <div class="card">
+        <h3>Practice log</h3>
+        <div class="fb-stats" id="logStats"></div>
+        <div class="log-days" id="logDays" aria-label="Minutes per day, last 14 days"></div>
+        <p class="hint">Every time you play for 10 seconds or more it is logged. Tap <b>✓ clean</b> on a session you played cleanly; with the Feedback tab listening, steady takes are marked clean for you.</p>
+        <div class="log-list" id="logList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Best clean tempos</h3>
+        <div class="log-list" id="bestList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Backup</h3>
+        <p class="hint">Routines, the practice log and set lists are kept in this browser. Export them to a file to keep a copy or move them to another device.</p>
+        <div class="btn-row">
+          <button id="bExport">Export all</button><button id="bImport">Import</button><button id="bClearLog" class="danger">Clear log</button>
+          <input type="file" id="bImportFile" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gig: set lists and stage view (js/ui/gig.js) -->
+    <section class="panel" id="panel-gig" role="tabpanel">
+      <div class="card stage">
+        <div class="stage-top"><span id="songPos"></span><span id="songNextUp"></span></div>
+        <div class="stage-title" id="songTitle">—</div>
+        <div class="stage-meta" id="songMeta"></div>
+        <div class="form-map" id="formMap" hidden></div>
+        <div class="form-now" id="formNow"></div>
+        <p class="stage-notes" id="songNotes"></p>
+        <div class="stage-nav">
+          <button id="songPrev">◀ Previous</button>
+          <button id="songNext" class="primary">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Set list</h3>
+        <label class="select-row"><span>Set list</span><select id="setlistSelect"></select></label>
+        <div class="btn-row">
+          <button id="sNew">New</button><button id="sRename">Rename</button><button id="sDuplicate">Duplicate</button><button id="sDelete" class="danger">Delete</button>
+        </div>
+        <div class="block-list" id="songList"></div>
+        <div class="btn-row"><button id="sAddSong">+ Add song</button><button id="sAddCurrent">+ Add what's playing</button></div>
+      </div>
+
+      <div class="card">
+        <h3>Page-turner pedal</h3>
+        <p class="hint">A Bluetooth page-turner pedal works like a keyboard. Pair it with this device; then, while the Gig tab is open, it turns to the next or previous song.</p>
+        <p id="pedalKeys"></p>
+        <div class="btn-row"><button id="pedalLearn">Set pedal keys</button><button id="pedalReset">Standard keys</button></div>
+        <p class="mic-msg" id="pedalMsg" role="status"></p>
+      </div>
+
+      <div class="card">
+        <h3>Share set lists</h3>
+        <div class="btn-row">
+          <button id="sExport">Export set lists</button><button id="sImport">Import</button>
+          <input type="file" id="sImportFile" accept=".json,application/json" hidden>
+        </div>
       </div>
     </section>
   </div>

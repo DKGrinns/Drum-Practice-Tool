@@ -6,7 +6,9 @@
 //   widgets.js    shared UI helpers (segmented buttons, dialogs, toasts)
 //   transport.js  tempo, tap, swing, play/stop, beat lights, status line
 //   metronome.js, grooves.js, builder.js, band.js, feel.js, feedback.js,
-//   trainer.js    one module per tab
+//   trainer.js, practice.js, gig.js   one module per tab
+//   items.js      "what to play" for routine blocks and set-list songs
+//   countin.js    spoken count-in
 //   mixer.js      per-drum volume/mute
 //   keyboard.js   desktop shortcuts
 //
@@ -23,10 +25,12 @@ import * as trainer from './ui/trainer.js';
 import * as band from './ui/band.js';
 import * as feel from './ui/feel.js';
 import * as feedback from './ui/feedback.js';
+import * as practice from './ui/practice.js';
+import * as gig from './ui/gig.js';
 import { renderMixers } from './ui/mixer.js';
 import './ui/keyboard.js';
 
-for (const m of [metronome, grooves, builder, band, feel, feedback, trainer]) registerPanel(m.panel);
+for (const m of [metronome, grooves, builder, band, feel, feedback, trainer, practice, gig]) registerPanel(m.panel);
 
 metronome.renderMetronome();
 grooves.renderGrooves();
@@ -35,6 +39,8 @@ trainer.renderTrainer();
 band.renderBand();
 feel.renderFeel();
 feedback.renderFeedback();
+practice.renderPractice();
+gig.renderGig();
 showTab(S.tab);
 refreshSequence(true);
 builder.renderBuilder();

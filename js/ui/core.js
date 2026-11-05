@@ -49,6 +49,9 @@ const DEFAULTS = {
   // own, a preset, or 'custom' -> customProgression), style ('auto' = from
   // the groove).
   band: { enabled: false, key: 'A', progression: 'auto', customProgression: 'i iv i v', style: 'auto' },
+  // Count-in before PLAY: bars (1 or 2), 'speech' (spoken + clicks) or 'clicks'.
+  countIn: { enabled: false, bars: 1, voice: 'speech' },
+  savedPatternId: '', // the saved pattern a routine block or song plays (source 'saved')
   mix: mixDefaults,
   master: 0.9, wakeLock: true,
   tab: 'metronome', source: 'metronome', grooveId: GROOVES[0].id, styleFilter: 'All',
@@ -72,6 +75,8 @@ if (!METERS[S.meter]) S.meter = '4/4';
 S.subdivision = resolveSubdivision(S.meter, S.subdivision);
 if (!GROOVES.some(g => g.id === S.grooveId)) S.grooveId = GROOVES[0].id;
 S.bpm = clamp(Math.round(S.bpm), 30, 300);
+S.countIn.bars = S.countIn.bars === 2 ? 2 : 1;
+if (!['speech', 'clicks'].includes(S.countIn.voice)) S.countIn.voice = 'speech';
 
 let saveTimer = null;
 export function saveSettings() {

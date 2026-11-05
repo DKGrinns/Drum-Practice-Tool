@@ -5,6 +5,7 @@ import { $, clamp, S, saveSettings, engine, bus, refreshSequence, getActiveSeq, 
 import { setSeg, segHandler, holdRepeat } from './widgets.js';
 import { trainerBpm, dropoutAmount } from '../sequencer.js';
 import { METERS, isTriplet } from '../patterns.js';
+import { speakCountIn, cancelSpeech, speaking, startDelay } from './countin.js';
 
 const trainerOn = () => S.trainer.enabled;
 let liveBpm = null; // tempo reported by the engine while playing
@@ -109,25 +110,62 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && engine.playing) requestWake();
 });
 
-export async function togglePlay() {
-  if (engine.playing) {
-    engine.stop();
-    releaseWake();
-    liveBpm = null;
-    clearVisuals();
-    bus.emit('stop');
-  } else {
-    refreshSequence(true);
-    liveBpm = trainerOn() ? trainerBpm(S.trainer, 0) : null;
-    const started = engine.start();
-    requestWake();
-    requestAnimationFrame(drawLoop);
-    await started;
-    bus.emit('play');
-  }
+export function stopPlayback() {
+  const was = engine.playing;
+  engine.stop();
+  cancelSpeech();
+  releaseWake();
+  liveBpm = null;
+  clearVisuals();
+  if (was || stopPending) bus.emit('stop');
+  stopPending = false;
   renderPlay();
   renderBpm();
   renderStatus(null);
+}
+
+// opts.at: start exactly at this audio time (a bar line of what was just
+// playing). opts.countIn: bars of count-in (default: the Count-in setting).
+let starting = false;
+export async function startPlayback(opts = {}) {
+  if (engine.playing || starting) return;
+  starting = true;
+  refreshSequence(true);
+  liveBpm = trainerOn() ? trainerBpm(S.trainer, 0) : null;
+  const countIn = opts.countIn != null ? opts.countIn : (S.countIn.enabled ? S.countIn.bars : 0);
+  const speak = countIn && speaking();
+  // With speech, leave time to start the first word early.
+  let at = opts.at;
+  if (at != null && speak && engine.ctx) at = Math.max(at, engine.ctx.currentTime + startDelay());
+  const started = engine.start({ at, delay: speak ? startDelay() : 0.08, countIn });
+  requestWake();
+  requestAnimationFrame(drawLoop);
+  await started;
+  starting = false;
+  if (countIn) {
+    const seq = getActiveSeq();
+    speakCountIn({ start: engine.startTime, bars: countIn, beatsPerBar: seq.beatsPerBar, beatDur: 60 / engine.seq.barBpm });
+  }
+  bus.emit('play');
+  renderPlay();
+  renderBpm();
+  renderStatus(null);
+}
+
+export async function togglePlay() {
+  if (engine.playing) stopPlayback();
+  else await startPlayback();
+}
+
+// The engine stopped itself at a bar line (engine.stopAtNextBar): tell the
+// rest of the app it stopped. Routines use this to change blocks.
+let stopPending = false;
+export function stopAtNextBar(cb) {
+  engine.stopAtNextBar(time => {
+    stopPending = true;
+    stopPlayback();
+    cb(time);
+  });
 }
 export function renderPlay() {
   const b = $('playBtn');
@@ -175,6 +213,7 @@ function showEvent(ev) {
     }
   }
   if (trainerOn() && ev.bpm !== liveBpm) { liveBpm = ev.bpm; renderBpm(); }
+  if (ev.countIn && ev.stepInBeat === 0) $('statusLine').innerHTML = `<span class="count-in">Count-in ${ev.beat + 1}</span>`;
   bus.emit('step', ev);
 }
 
@@ -198,6 +237,7 @@ function clearVisuals() {
 
 // Trainer / gap status line under the BPM.
 export function renderStatus(ev) {
+  if (ev && ev.countIn) return; // showEvent shows the count
   const parts = [];
   const tr = S.trainer, gap = S.gap;
   if (tr.enabled) {
