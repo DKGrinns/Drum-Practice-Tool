@@ -16,7 +16,7 @@ To continue, open the repo in Claude Code and say: *"Continue the roadmap in ROA
 
 ## Current state
 
-Version 1 and Steps 1–3 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
+Version 1 and Steps 1–4 are done: metronome, tempo trainer, gap trainer, swing, 16 grooves (reggae, funk, soul, fusion), pattern builder with save/export/import, offline PWA, and GitHub Pages deployment.
 
 Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus core/transport/widgets/mixer/keyboard), `js/engine.js` (audio clock and scheduler), `js/sequencer.js` (pure timing, tested), `js/synth.js` (drum sounds), `js/patterns.js` (pattern model and library), `js/grooves.js` (groove library), `js/storage.js`.
 
@@ -61,15 +61,16 @@ Code layout: `js/app.js` (entry point), `js/ui/*.js` (one module per tab plus co
 - [x] New **Feel** tab (`js/ui/feel.js`); the status line shows dropout % and the click mode.
 - [x] Tests: `tests/feel.test.js` (click modes, sparse timing, click layer, dropout rate, repeatability and beat-1 safety, beat-level muting in grooves, offsets, humanize limits). A browser check measured the real scheduled times: kick +20 ms, snare +35 ms with a 20 ms groove offset and a +15 ms snare offset.
 
-### Step 4 — Playing feedback A: microphone timing analysis (section 1)
-This must work well.
-- [ ] Mic input via `getUserMedia` with echo cancellation, noise suppression and auto gain turned **off**.
-- [ ] Onset detection in an AudioWorklet (energy/spectral flux with adaptive threshold), timestamped on the audio clock.
-- [ ] Latency calibration: the app plays clicks and the player taps along, or the app hears its own clicks through the speakers. Store the result per device.
-- [ ] Match each hit to the nearest grid step, then show early/late in ms per hit, the average offset, consistency (standard deviation), and a rushing/dragging trend.
-- [ ] Live view: a scrolling hit timeline. Per-bar summary and an end-of-take report.
-- [ ] Handle bleed from the app's own click. Advise headphones, or ignore onsets at known click times.
-- [ ] Test onset detection and scoring with synthetic audio buffers in Node (pure functions).
+### Step 4 — Playing feedback A: microphone timing analysis (section 1) ✅ (done)
+- [x] Mic input (`js/mic.js`) with echo cancellation, noise suppression and auto gain off; iOS audio session set to play-and-record while listening.
+- [x] Onset detector (`js/onset-worklet.js`): pre-emphasis energy, adaptive floor (in dB), rise-vs-recent-max test, refractory window with loud-attack override, sample-accurate start refinement, peak level. Runs in an AudioWorklet (ScriptProcessor fallback) on the AudioContext clock.
+- [x] Latency calibration: speaker test (listens to its own clicks; also measures the speaker-bleed level) and tap test (for headphones), plus ±1 ms fine tune. Stored per device in localStorage (`grooveTrainer.latency`).
+- [x] Scoring (`js/timing-analysis.js`): grid of beats/8ths/triplets/16ths with swing, nearest-point matching with latency removed, average, spread, ±10/±20 ms shares, drift trend, per-bar and per-position averages, plain-language verdicts.
+- [x] Speaker-bleed filter: quiet onsets that line up with sounds the app played are ignored (the engine logs every beat and every sound).
+- [x] Feedback tab: mic toggle, level meter with threshold mark, sensitivity, calibration, live last-hit readout, timeline canvas, stats, take report (on Stop).
+- [x] Tests: `tests/onset.test.js` (synthetic kick/snare/hat audio: grooves, ghost notes after backbeats, fast 16ths, noise/swell/ringing, sensitivity, bleed, a hit 15 ms after a click, a randomized 2-minute performance at 44.1 and 48 kHz with zero misses/false hits and 95% within 1.5 ms) and `tests/analysis.test.js`.
+- [x] Browser test with a virtual drummer and virtual mic (fixed delay + speaker bleed + room noise): the speaker test measured the delay, and the take report showed exactly +15 ms on the beats / −5 ms on the "&"s as played, with all 20 speaker clicks ignored at high sensitivity. The tap test measured a 200 ms (Bluetooth-like) delay correctly.
+- [ ] Needs a real-world check by the user: different phones/laptops, acoustic kit volume, room echo. Tune the default sensitivity (60) if needed.
 
 ### Step 5 — Playing feedback B: MIDI kit and recording (section 1)
 - [ ] Web MIDI input (Chrome/Edge/Android; **not** supported in iOS Safari, so show a message there). Map GM drum notes to voices, with a mapping editor.
@@ -108,10 +109,7 @@ This must work well.
 
 ## Notes for the next session
 
-- Next up: **Step 4, microphone timing analysis** (must work well). Useful hooks:
-  - `bus.on('step', ev)` gives each step as it is heard; `ev.time` is on the audio clock (`engine.ctx.currentTime`).
-  - The Sequencer can tell you the grid time of every step. For scoring, match mic onsets against the scheduled step times; collect them in `Engine.handleStep`, which knows each step's exact time, rather than in the visual queue.
-  - Use an AudioWorklet for onset detection, and keep the detection maths in a pure module so it can be tested in Node with synthetic buffers.
+- Next up: **Step 5, MIDI kit and recording.** Reuse `js/timing-analysis.js` for scoring: MIDI note-on events need converting to AudioContext time (`performance.now()` timestamps -> `ctx.getOutputTimestamp()` mapping), then `matchHit` works unchanged. Per-drum scoring = group hits by MIDI note -> voice. Recording: MediaRecorder on the mic stream from `js/mic.js`, plus the hit list, aligned to the beat log.
 - New feature tabs plug in via `registerPanel` / `registerSource` and the event bus in `js/ui/core.js` (see README "Adding a feature tab").
 
 - The default branch is `claude/hopeful-bohr-j660du`, and `.github/workflows/pages.yml` deploys whatever is pushed to the default branch.

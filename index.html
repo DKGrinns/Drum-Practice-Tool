@@ -209,6 +209,59 @@
       </div>
     </section>
 
+    <!-- Feedback: microphone timing analysis (js/ui/feedback.js) -->
+    <section class="panel" id="panel-feedback" role="tabpanel">
+      <div class="card" id="fbUnsupported" hidden>
+        <h3>Microphone not available</h3>
+        <p class="hint">This browser can't use the microphone here. Use a recent Chrome, Edge, Safari or Firefox over https (the GitHub Pages link works).</p>
+      </div>
+      <div class="card">
+        <div class="row">
+          <h3>Microphone</h3>
+          <button class="toggle wide-toggle" id="micToggle" aria-pressed="false">Start listening</button>
+        </div>
+        <div class="meter" aria-hidden="true"><div class="meter-fill" id="micMeter"></div><div class="meter-mark" id="micMark"></div></div>
+        <label class="slider-row"><span>Sensitivity <b id="micSensVal">60</b></span>
+          <input type="range" class="slider" id="micSens" min="0" max="100" step="1"></label>
+        <p class="hint" id="micHint">Put the phone or laptop a couple of metres from the kit. Headphones give the cleanest results; with speakers, run the speaker test below. Raise the sensitivity until your ghost notes register; lower it if hits appear when you're not playing.</p>
+        <p class="mic-msg" id="micMsg" role="status"></p>
+      </div>
+
+      <div class="card">
+        <h3>Latency calibration</h3>
+        <p class="hint">Every device has a delay between a sound being scheduled and the mic hearing it. Calibrate once per device (and again if you switch speakers or headphones).</p>
+        <p class="calib-status" id="calibStatus"></p>
+        <div class="btn-row">
+          <button id="speakerTest" title="The app plays clicks and listens to itself through the speakers">Speaker test</button>
+          <button id="tapTest" title="Hit a drum along with 16 clicks — use this with headphones">Tap test</button>
+        </div>
+        <div class="row">
+          <span>Fine tune</span>
+          <div class="mini-stepper"><button id="latDown" aria-label="Less latency">−</button><output id="latVal">0</output><button id="latUp" aria-label="More latency">+</button></div>
+          <span>ms</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row wrap-row">
+          <h3>Your timing</h3>
+          <div class="seg small" id="fbRes" role="group" aria-label="Score against">
+            <button data-value="1">Beats</button><button data-value="2">8ths</button><button data-value="3">Triplets</button><button data-value="4">16ths</button>
+          </div>
+        </div>
+        <div class="fb-last" id="fbLast"><span class="big">—</span><span class="lbl">Press Play and start playing</span></div>
+        <canvas id="fbTimeline" class="fb-timeline" height="160" aria-label="Recent hits: above the line = late, below = early"></canvas>
+        <div class="fb-axis"><span>▲ late</span><span>each dot is a hit (newest on the right)</span><span>▼ early</span></div>
+        <div class="fb-stats" id="fbStats"></div>
+        <div class="btn-row"><button id="fbReset">New take</button><button id="fbReportBtn">Show report</button></div>
+      </div>
+
+      <div class="card" id="fbReport" hidden>
+        <h3>Take report</h3>
+        <div id="fbReportBody"></div>
+      </div>
+    </section>
+
     <!-- Trainer -->
     <section class="panel" id="panel-trainer" role="tabpanel">
       <div class="card">

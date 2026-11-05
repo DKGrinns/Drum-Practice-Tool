@@ -35,6 +35,14 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   - *Click dropout:* random beats go completely silent, both the click and the groove. Keep playing through them. You can always keep beat 1, and **Get harder** adds 10% more silent beats every few bars, up to a limit you set.
   - *Push / pull:* move the whole groove ahead of the click (pushing) or behind it (laid back), up to 50 ms. Per-drum timing lets you set, for example, a lazy snare or a late kick. The presets include Laid back, Pushing, Lazy backbeat, Reggae lean and Dilla drunk. The click never moves; it's your reference.
   - *Humanize:* small random timing (up to ±12 ms) and volume changes on every hit. Clicks stay perfect.
+- **Feedback** (timing analysis through the microphone):
+  1. Press **Start listening** and allow the microphone. Put the phone or laptop a couple of metres from the kit.
+  2. **Calibrate once per device.** With speakers, use **Speaker test**: stay quiet while the app plays 10 clicks and listens to itself. With headphones, use **Tap test**: hit a drum exactly with 16 clicks. Calibrate again if you switch between speakers, wired headphones and Bluetooth.
+  3. Set **Sensitivity** so every hit, including your ghost notes, makes the meter jump past the white mark, and nothing registers when you're not playing.
+  4. Press **Play** on anything (metronome, a groove, your pattern, with any trainer) and play along. Each hit is matched to the nearest beat, 8th, triplet or 16th (your choice; swing is taken into account). You see how early or late it was in milliseconds, plus a timeline of recent hits, your average, your spread (consistency), the share of hits within ±10 ms, and whether you're drifting (rushing or dragging).
+  5. Press **Stop** for the take report: a summary in plain words, your average at each position in the bar (e.g. you rush the "&" of 4), and a bar-by-bar chart. This works through gap-trainer silences and click dropout too.
+  - With speakers, the app ignores quiet sounds that line up with its own clicks and drums (speaker bleed), so they aren't scored as your hits. Headphones still give the cleanest results.
+  - Tips: louder is fine, because the detector looks for attacks, not volume. Very soft double kicks played with a felt beater can be missed. On iPhone, the playback volume may drop while the mic is on (an iOS rule), so headphones help there.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
@@ -76,7 +84,7 @@ The app is plain HTML, CSS and ES modules, so any static web server will run it:
 
 ```sh
 python3 -m http.server 8000     # then open http://localhost:8000
-npm test                        # timing + pattern save/load tests (Node 18+, no dependencies)
+npm test                        # timing, patterns, feel, onset detection and scoring tests (Node 18+, no dependencies)
 ```
 
 | File | What it does |
@@ -85,11 +93,14 @@ npm test                        # timing + pattern save/load tests (Node 18+, no
 | `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
 | `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
 | `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
-| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `feel.js`, `trainer.js` | One module per tab |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `feel.js`, `feedback.js`, `trainer.js` | One module per tab |
 | `js/ui/mixer.js`, `widgets.js`, `keyboard.js` | Mixer, shared UI helpers, desktop shortcuts |
 | `js/engine.js` | AudioContext and the lookahead scheduler loop |
 | `js/sequencer.js` | Pure timing: step times, swing, tempo trainer, gap trainer, click dropout, click modes |
 | `js/feel.js` | Push/pull offsets, per-drum microtiming, humanize (pure functions) |
+| `js/onset-worklet.js` | Drum-hit (onset) detector; runs as an AudioWorklet, also importable for tests |
+| `js/timing-analysis.js` | Scoring: grid, hit matching, summaries, latency estimation, speaker-bleed filter (pure) |
+| `js/mic.js` | Microphone input (no echo cancellation/noise suppression/auto gain) feeding the detector |
 | `js/synth.js` | Synthesized drum voices |
 | `js/patterns.js` | Pattern model, metronome patterns, saved-pattern library, JSON import/export |
 | `js/grooves.js` | The groove library |

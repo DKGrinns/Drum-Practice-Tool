@@ -40,6 +40,8 @@ const DEFAULTS = {
   clickMode: 'all', sparseBars: 4,
   dropout: { enabled: false, amount: 25, progressive: false, max: 75, every: 4, keepOne: true },
   feel: { offset: 0, kick: 0, snare: 0, hats: 0, ride: 0, perc: 0, humanize: 0 },
+  // Microphone timing feedback: detector sensitivity and grid (points per beat)
+  feedback: { sensitivity: 60, res: 4 },
   mix: mixDefaults,
   master: 0.9, wakeLock: true,
   tab: 'metronome', source: 'metronome', grooveId: GROOVES[0].id, styleFilter: 'All',

@@ -224,6 +224,7 @@ export class Sequencer {
       muted: this.barMuted || this.beatMuted,   // silent (gap trainer or dropout)
       dropped: this.beatMuted,                 // silent because of click dropout
       bpm: this.currentBpm(),
+      beatDur: this.beatDur,                   // exact length of this beat (s)
     });
   }
 

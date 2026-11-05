@@ -48,6 +48,11 @@ export class Engine {
     this.clickFor = clickFor || (() => null);
     this.getFeel = getFeel || (() => null);
     this.visualQueue = [];
+    // Logs for timing feedback: every beat played (the grid to score hits
+    // against) and every sound sent to the speakers (to recognise speaker
+    // bleed in the mic). Cleared on start, trimmed to recent history.
+    this.beatLog = [];
+    this.soundLog = [];
     this.playing = false;
     this.seq = new Sequencer(config, ev => this.handleStep(ev));
     this.ticker = createTicker(() => this.tick());
@@ -87,6 +92,8 @@ export class Engine {
       try { await ctx.resume(); } catch (e) { /* ignore */ }
     }
     this.visualQueue = [];
+    this.beatLog = [];
+    this.soundLog = [];
     this.seq.start(ctx.currentTime + 0.08);
     this.playing = true;
     this.tick();
@@ -108,6 +115,10 @@ export class Engine {
   }
 
   handleStep(ev) {
+    if (ev.stepInBeat === 0) {
+      this.beatLog.push({ time: ev.time, dur: ev.beatDur, barCount: ev.barCount, beat: ev.beat, beatsPerBar: ev.beatsPerBar, muted: ev.muted });
+      if (this.beatLog.length > 6000) this.beatLog.splice(0, 1000);
+    }
     if (!ev.muted) {
       const feel = this.getFeel();
       const human = feel && feel.humanize ? feel.humanize / 100 : 0;
@@ -122,15 +133,34 @@ export class Engine {
           t += voiceOffset(feel, h.voice);
           if (human) { const r = humanize(human); t += r.dt; vel *= r.dv; }
         }
-        this.synth.play(h.voice, Math.max(t, earliest), Math.min(1.2, vel));
+        t = Math.max(t, earliest);
+        this.synth.play(h.voice, t, Math.min(1.2, vel));
+        this.logSound(t);
       }
       const click = this.clickFor(ev);
       if (click) {
         const level = this.getLevel('grooveClick');
-        if (level > 0) this.synth.play(click, ev.time, 0.9 * level);
+        if (level > 0) { this.synth.play(click, ev.time, 0.9 * level); this.logSound(ev.time); }
       }
     }
     this.visualQueue.push(ev);
+  }
+
+  logSound(t) {
+    const last = this.soundLog[this.soundLog.length - 1];
+    if (last === undefined || Math.abs(last - t) > 0.001) this.soundLog.push(t);
+    if (this.soundLog.length > 4000) this.soundLog.splice(0, 1000);
+  }
+
+  // Sounds sent to the speakers around time t (for speaker-bleed checks).
+  soundsNear(t, window = 0.05) {
+    const out = [];
+    for (let i = this.soundLog.length - 1; i >= 0; i--) {
+      const s = this.soundLog[i];
+      if (s < t - window) break;
+      if (s <= t + window) out.push(s);
+    }
+    return out;
   }
 
   // Steps whose time has been reached (allowing for output latency), for
