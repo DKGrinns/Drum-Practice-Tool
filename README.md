@@ -92,6 +92,7 @@ The app is plain HTML, CSS and ES modules, so any static web server will run it:
 ```sh
 python3 -m http.server 8000     # then open http://localhost:8000
 npm test                        # timing, patterns, feel, onset detection and scoring tests (Node 18+, no dependencies)
+npm run test:browser            # the real app in headless Chromium (needs Playwright, see tests/browser/README.md)
 ```
 
 | File | What it does |

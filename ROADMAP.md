@@ -5,7 +5,7 @@ This is the plan for growing Groove Trainer into a full drum training tool, buil
 ## Rules for every session
 
 1. **Keep the app working.** Each session finishes one step (or a clear part of one). The app must work at the end of every session.
-2. **Before pushing:** run `npm test`, then try the app in a browser (`python3 -m http.server 8000`). Check that features that already worked still work.
+2. **Before pushing:** run `npm test` (unit tests) and `npm run test:browser` (real app in headless Chromium; see `tests/browser/README.md` for setup and the expected results). Add a browser test in `tests/browser/` for each new feature. To try the app by hand: `python3 -m http.server 8000`.
 3. **Bump `CACHE_VERSION` in `sw.js`** whenever app files change, so installed copies update.
 4. **Add the new files to `ASSETS` in `sw.js`**, so they work offline.
 5. **Update this file:** tick off finished items, add notes for the next session, and commit them together with the code.
