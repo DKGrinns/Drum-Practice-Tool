@@ -25,12 +25,13 @@ import * as trainer from './ui/trainer.js';
 import * as band from './ui/band.js';
 import * as feel from './ui/feel.js';
 import * as feedback from './ui/feedback.js';
+import * as listen from './ui/listen.js';
 import * as practice from './ui/practice.js';
 import * as gig from './ui/gig.js';
 import { renderMixers } from './ui/mixer.js';
 import './ui/keyboard.js';
 
-for (const m of [metronome, grooves, builder, band, feel, feedback, trainer, practice, gig]) registerPanel(m.panel);
+for (const m of [metronome, grooves, builder, band, feel, feedback, listen, trainer, practice, gig]) registerPanel(m.panel);
 
 metronome.renderMetronome();
 grooves.renderGrooves();
@@ -39,6 +40,7 @@ trainer.renderTrainer();
 band.renderBand();
 feel.renderFeel();
 feedback.renderFeedback();
+listen.renderListen();
 practice.renderPractice();
 gig.renderGig();
 showTab(S.tab);

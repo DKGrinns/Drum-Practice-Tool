@@ -51,6 +51,10 @@ const DEFAULTS = {
   band: { enabled: false, key: 'A', progression: 'auto', customProgression: 'i iv i v', style: 'auto' },
   // Count-in before PLAY: bars (1 or 2), 'speech' (spoken + clicks) or 'clicks'.
   countIn: { enabled: false, bars: 1, voice: 'speech' },
+  // Listen tab (learning from records): source ('tab' | 'file' | 'mic'),
+  // seconds kept, loop speed, drum focus, record and click volume, click
+  // offset (ms), loop length in bars (0 = free), transcription grid.
+  listen: { source: 'tab', bufferSec: 60, speed: 1, focus: 'all', vol: 0.9, click: false, clickVol: 0.7, clickOffset: 0, bars: 4, grid: 'auto' },
   savedPatternId: '', // the saved pattern a routine block or song plays (source 'saved')
   mix: mixDefaults,
   master: 0.9, wakeLock: true,
@@ -77,6 +81,12 @@ if (!GROOVES.some(g => g.id === S.grooveId)) S.grooveId = GROOVES[0].id;
 S.bpm = clamp(Math.round(S.bpm), 30, 300);
 S.countIn.bars = S.countIn.bars === 2 ? 2 : 1;
 if (!['speech', 'clicks'].includes(S.countIn.voice)) S.countIn.voice = 'speech';
+if (!['tab', 'file', 'mic'].includes(S.listen.source)) S.listen.source = 'tab';
+if (![30, 60].includes(S.listen.bufferSec)) S.listen.bufferSec = 60;
+S.listen.speed = clamp(Math.round(S.listen.speed * 20) / 20, 0.5, 1);
+if (![0, 1, 2, 4, 8].includes(S.listen.bars)) S.listen.bars = 4;
+if (!['all', 'kick', 'snare', 'hats'].includes(S.listen.focus)) S.listen.focus = 'all';
+if (!['auto', 'sixteenths', 'triplets'].includes(S.listen.grid)) S.listen.grid = 'auto';
 
 let saveTimer = null;
 export function saveSettings() {

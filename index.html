@@ -342,6 +342,106 @@
       </div>
     </section>
 
+    <!-- Listen: learn from records -->
+    <section class="panel" id="panel-listen" role="tabpanel">
+      <div class="card">
+        <div class="row wrap-row">
+          <h3>Listen to</h3>
+          <div class="seg" id="lsSource" role="group" aria-label="Source">
+            <button data-value="tab">Chrome tab</button><button data-value="file">Audio file</button><button data-value="mic">Microphone</button>
+          </div>
+        </div>
+        <div class="hint" id="lsTabHelp">
+          <ol class="ls-steps">
+            <li>Open the record in another Chrome or Edge tab (YouTube, Spotify web, Bandcamp…).</li>
+            <li>Press <b>Start listening</b>, choose <b>Chrome Tab</b>, pick that tab.</li>
+            <li>Tick <b>Also share tab audio</b>, then <b>Share</b>.</li>
+          </ol>
+          Works in Chrome and Edge on a computer. You hear the record through this app, so the drum focus and the click line up. (Sharing a whole screen also works on Windows if you tick “Also share system audio”.)
+        </div>
+        <p class="hint" id="lsMicHelp" hidden>Play the record on a speaker near the microphone. The app doesn't play the mic back (no feedback), and the click needs headphones or a quiet click volume so the mic doesn't hear it.</p>
+        <div class="btn-row" id="lsFileRow" hidden>
+          <label class="file-btn"><input type="file" id="lsFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac">Choose an audio file…</label>
+        </div>
+        <div class="btn-row"><button class="primary" id="lsStart">Start listening</button></div>
+        <p class="mic-msg" id="lsMsg" role="status"></p>
+        <div class="meter" aria-hidden="true"><div class="meter-fill" id="lsMeter"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="row"><h3>Tempo</h3><span class="hint" id="lsFeel"></span></div>
+        <div class="ls-tempo">
+          <div class="ls-bpm" id="lsBpm" aria-live="polite">—</div>
+          <div class="ls-conf-box">
+            <div id="lsConf" class="ls-conf"></div>
+            <div class="ls-conf-bar"><div id="lsConfFill"></div></div>
+          </div>
+        </div>
+        <div class="beat-dots ls-dots" id="lsDots" aria-hidden="true">
+          <div class="beat-dot first">1</div><div class="beat-dot">2</div><div class="beat-dot">3</div><div class="beat-dot">4</div>
+        </div>
+        <div class="btn-row">
+          <button id="lsHalf" title="The beat is twice as slow">½×</button>
+          <button id="lsDouble" title="The beat is twice as fast">2×</button>
+          <button id="lsShift" title="The beats are on the &quot;&amp;&quot; — move them half a beat">Shift ½ beat</button>
+          <button id="lsOne" title="Press on a beat 1 while the music plays">This is 1</button>
+        </div>
+        <div class="ls-alts hint" id="lsAlts"></div>
+        <div class="btn-row"><button class="primary" id="lsUse" disabled>Use this tempo</button></div>
+        <div class="row"><span>Click along with the record</span><button class="toggle" id="lsClick" aria-pressed="false">Off</button></div>
+        <label class="slider-row"><span>Click volume</span><input type="range" class="slider" id="lsClickVol" min="0" max="100" step="1"></label>
+        <div class="row">
+          <span>Click earlier / later</span>
+          <div class="mini-stepper"><button id="lsOffDown" aria-label="Earlier">−</button><output id="lsOffVal">0</output><button id="lsOffUp" aria-label="Later">+</button></div>
+          <span>ms</span>
+        </div>
+        <p class="hint">The tempo comes from the last 12 seconds. If it shows half or double what you feel, press ½× or 2×; if the lights flash on the "&amp;", press Shift ½ beat; press This is 1 on a downbeat to fix the bar.</p>
+      </div>
+
+      <div class="card" id="lsBufferCard">
+        <div class="row">
+          <h3>Last <span id="lsBufLen">60</span> seconds</h3>
+          <div class="seg small" id="lsBufSec" role="group" aria-label="Buffer length"><button data-value="30">30 s</button><button data-value="60">60 s</button></div>
+        </div>
+        <canvas id="lsLive" class="ls-wave" aria-label="Waveform of the last seconds"></canvas>
+        <div class="btn-row"><button class="primary" id="lsGrab" disabled>Grab</button></div>
+        <p class="hint">Heard a part you want to learn? Press Grab: the last seconds become a loop below.</p>
+      </div>
+
+      <div class="card" id="lsLoopCard" hidden>
+        <div class="row"><h3>Loop</h3><span class="hint" id="lsLoopInfo"></span></div>
+        <canvas id="lsWave" class="ls-wave big" aria-label="Waveform with loop points; tap to move the loop, drag an edge to change it"></canvas>
+        <div class="row wrap-row">
+          <span>Length</span>
+          <div class="seg small" id="lsBars" role="group" aria-label="Loop length"><button data-value="1">1 bar</button><button data-value="2">2</button><button data-value="4">4</button><button data-value="8">8</button><button data-value="0">Free</button></div>
+        </div>
+        <div class="btn-row">
+          <button id="lsPrevBar">◀ Bar</button>
+          <button class="primary" id="lsLoopPlay">▶ Play loop</button>
+          <button id="lsNextBar">Bar ▶</button>
+        </div>
+        <label class="slider-row"><span>Speed <b id="lsSpeedVal">100%</b></span><input type="range" class="slider" id="lsSpeed" min="50" max="100" step="5"></label>
+        <div class="seg small wrap" id="lsSpeedQuick" role="group" aria-label="Speed presets"><button data-value="50">50%</button><button data-value="60">60%</button><button data-value="75">75%</button><button data-value="90">90%</button><button data-value="100">100%</button></div>
+        <div class="row wrap-row">
+          <span>Focus</span>
+          <div class="seg" id="lsFocus" role="group" aria-label="Drum focus"><button data-value="all">All</button><button data-value="kick">Kick</button><button data-value="snare">Snare</button><button data-value="hats">Hats</button></div>
+        </div>
+        <label class="slider-row"><span>Record volume</span><input type="range" class="slider" id="lsVol" min="0" max="100" step="1"></label>
+        <p class="hint">Tap the waveform to move the loop to a bar line; drag an edge to change it (Free). Slowing down keeps the pitch; drum hits stay crisp. Kick/Snare/Hats filter the sound so one part is easier to hear.</p>
+      </div>
+
+      <div class="card" id="lsTrCard" hidden>
+        <h3>Rough transcription</h3>
+        <p class="hint">Finds kick, snare and hi-hat hits in the loop (up to 4 bars from the loop start, which should be a beat 1) and puts them on a grid. It's a starting point: check it by ear and fix it in the Builder. Cross-sticks and claps show as snare; rides and shakers as hats.</p>
+        <div class="row wrap-row">
+          <span>Grid</span>
+          <div class="seg small" id="lsGrid" role="group" aria-label="Grid"><button data-value="auto">Auto</button><button data-value="sixteenths">16ths</button><button data-value="triplets">Triplets</button></div>
+        </div>
+        <div class="btn-row"><button id="lsTranscribe">Transcribe the loop</button><button class="primary" id="lsOpenBuilder" disabled>Open in Builder</button></div>
+        <pre class="ls-pre" id="lsTrPreview"></pre>
+      </div>
+    </section>
+
     <!-- Trainer -->
     <section class="panel" id="panel-trainer" role="tabpanel">
       <div class="card">

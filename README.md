@@ -1,6 +1,6 @@
 # Groove Trainer
 
-A drum practice app built around reggae, funk, soul and fusion, with grooves from many more styles. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of 73 loopable grooves, a step-sequencer pattern builder, a backing band, timing feedback by microphone or e-kit, practice routines with a log, and gig set lists that a page-turner pedal can step through. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
+A drum practice app built around reggae, funk, soul and fusion, with grooves from many more styles. It has a metronome, a tempo trainer, a gap (mute) trainer, a library of 73 loopable grooves, a step-sequencer pattern builder, a backing band, timing feedback by microphone or e-kit, a Listen tab that hears a record playing in Chrome (tempo, beat-locked click, slow-down loops, drum focus, rough transcription), practice routines with a log, and gig set lists that a page-turner pedal can step through. It runs in the browser with no build step and no server code, and once installed it works offline as an app.
 
 **Live app:** https://dkgrinns.github.io/Drum-Practice-Tool/
 
@@ -50,6 +50,15 @@ The **Metronome**, **Grooves** and **Builder** tabs each choose what PLAY plays 
   - **Electronic kit (MIDI):** choose **Electronic kit (MIDI)**, plug the kit in by USB and press **Connect**. Each hit is timed exactly by the kit, so no calibration is needed. The take report adds a **By drum** table (timing and velocity for each drum) and **snare dynamics**: how even your ghost notes and accents are, and the gap between them. Standard General MIDI notes map automatically; to fix a pad, choose the drum, press **Learn** and hit the pad. **Play the app's drum sounds from the pads** turns practice pads into a kit. Web MIDI works in Chrome and Edge on computers and in Chrome on Android, but not in Safari (iPhone, iPad or Mac).
   - **Recording takes:** turn on **Record takes** (with the mic on), and every take from Play to Stop is recorded. **Recorded takes** keeps the last 5 until you close the app: **Listen**, **Over the groove** (plays the take in time with the same groove, latency-corrected), **WAV** (download) and **Report**. **Recent takes** lists the scores of your last takes so you can compare them over time.
   - Tips: louder is fine, because the detector looks for attacks, not volume. Very soft double kicks played with a felt beater can be missed. On iPhone, the playback volume may drop while the mic is on (an iOS rule), so headphones help there.
+- **Listen** (learn grooves from records):
+  - *Listen to a Chrome tab* (Chrome or Edge on a computer): open the record in another tab (YouTube, Spotify web, Bandcamp…), press **Start listening**, choose **Chrome Tab**, pick that tab, tick **Also share tab audio** and press **Share**. Chrome then plays the tab through this app, so the drum focus and the click line up exactly. If you forget to tick the audio box, the app tells you. On Windows, sharing the whole screen with "Also share system audio" works too.
+  - *Audio file:* choose an MP3, WAV, M4A, OGG or FLAC on your device (up to 10 minutes are used). *Microphone:* play the record on a speaker near the mic (it is never played back, so no feedback).
+  - *Tempo:* the BPM of the last 12 seconds, with how sure the app is (sure / fairly sure / unsure) and the feel (straight, swung 8ths, swung 16ths). If it shows half or double what you feel (common with reggae, ska, jazz), press **½×** or **2×**; "Also fits" offers other readings such as 80 vs 120 for a half-time shuffle. If the lights flash on the "&", press **Shift ½ beat**; press **This is 1** on a downbeat if the bar is off. **Use … BPM** sets the app's tempo.
+  - *Beat lights and click:* the four lights follow the record's beats, and **Click along with the record** adds a click locked to them (beat 1 accented). **Click earlier / later** nudges it if your setup needs it (for example when the browser keeps playing the tab itself).
+  - *Grab and loop:* the app keeps the last 30 or 60 seconds. Press **Grab** and they become a loop with a waveform, beat ticks and orange bar lines. Tap the waveform to move the loop to a bar line, choose 1, 2, 4 or 8 bars (or **Free** and drag the edges), and step with **◀ Bar / Bar ▶**. A loaded file works the same way.
+  - *Slow down:* 50–100% without changing the pitch. Drum hits stay crisp and on the beat (they're played whole; the stretching happens between them), and the click follows at any speed.
+  - *Focus:* **Kick** (low-pass), **Snare** (cuts the lows, lifts the crack) or **Hats** (high-pass) make one part easier to hear.
+  - *Rough transcription:* finds kick, snare (with ghost notes) and hi-hat hits in up to 4 bars from the loop start (start the loop on a 1), on a 16th or triplet grid (Auto picks triplets for shuffles), and **Open in Builder** puts it in the pattern builder with the tempo and swing, to fix by ear. Cross-sticks and claps show as snare, rides and shakers as hats; a loud bass line or busy percussion can add stray hits.
 - **Trainer:**
   - The *tempo trainer* starts at the start BPM and changes by X BPM every Y bars until it reaches the target, then holds there. The target can also be lower than the start. While it runs, the big display shows the current tempo and the status line shows when the next change comes.
   - The *gap trainer* plays N bars, then goes silent for M bars, and repeats. By default the beat lights also go dark during the silent bars, so you can check whether you're still on the 1 when the sound comes back.
@@ -102,7 +111,7 @@ The app is plain HTML, CSS and ES modules, so any static web server will run it:
 
 ```sh
 python3 -m http.server 8000     # then open http://localhost:8000
-npm test                        # timing, patterns, feel, onset detection and scoring tests (Node 18+, no dependencies)
+npm test                        # timing, patterns, feel, onset detection, scoring, tempo/beat/transcription and time-stretch tests (Node 18+, no dependencies)
 npm run test:browser            # the real app in headless Chromium (needs Playwright, see tests/browser/README.md)
 ```
 
@@ -112,7 +121,7 @@ npm run test:browser            # the real app in headless Chromium (needs Playw
 | `js/app.js` | Entry point: loads the UI modules and registers the tabs in order |
 | `js/ui/core.js` | Settings, audio engine, event bus, and the registries for sources (what Play plays) and tabs |
 | `js/ui/transport.js` | Tempo, tap, swing, play/stop, beat lights, status line |
-| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `band.js`, `feel.js`, `feedback.js`, `trainer.js`, `practice.js`, `gig.js` | One module per tab |
+| `js/ui/metronome.js`, `grooves.js`, `builder.js`, `band.js`, `feel.js`, `feedback.js`, `listen.js`, `trainer.js`, `practice.js`, `gig.js` | One module per tab |
 | `js/ui/items.js` | "What to play" for routine blocks and songs: apply it, label it, the chooser form; the `saved` source plays a saved pattern without touching the builder |
 | `js/ui/countin.js` | Spoken count-in (speechSynthesis), started early by the learned speech delay |
 | `js/practice.js` | Routines, practice log (minutes per day, streak, best clean tempo), set lists, song form, count-in words, backup format (pure) |
@@ -125,6 +134,10 @@ npm run test:browser            # the real app in headless Chromium (needs Playw
 | `js/timing-analysis.js` | Scoring: grid, hit matching, summaries, latency estimation, speaker-bleed filter (pure) |
 | `js/mic.js` | Microphone input (no echo cancellation/noise suppression/auto gain) feeding the detector; raw audio for recording |
 | `js/midi.js` | Web MIDI e-kit input: GM drum map, pad learning, timestamps converted to the audio clock as heard |
+| `js/tempo.js` | Records: onset envelope (spectral flux in kick/snare/hat bands), tempo with confidence and alternatives, beat tracking, downbeat, swing, transients (pure, tested) |
+| `js/transcribe.js` | Rough kick/snare/hat transcription of a loop on a 16th or triplet grid (pure, tested) |
+| `js/listen-worklet.js` | Time-stretch without pitch change (WSOLA that keeps drum hits whole) and the capture tap; AudioWorklet, also importable for tests |
+| `js/capture.js` | Chrome-tab capture (getDisplayMedia), mic, audio files, the rolling 30–60 s buffer |
 | `js/recorder.js` | Sample-aligned take recording, WAV export, playback alignment over the groove |
 | `js/synth.js` | Synthesized drum voices |
 | `js/patterns.js` | Pattern model, metronome patterns, saved-pattern library, JSON import/export |
